@@ -11,7 +11,7 @@ MIN_DIST_BETWEEN_PREDICTORS = 100 # Number of kilometers between a new predictor
 GRID_SIZE = 0.1 #Side length of each grid square (in degrees lat/lon)
 
 observations = load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR) #Load these in from somewhere, one row per observation, columns 0 and 1 are lat and lon, and column 3 is the season
-locations = init_birdgrid(observations, GRID_SIZE) #Calculate these from the above, one row per location, columns 0 and 1 are lat and lon
+locations = init_birdgrid(observations, GRID_SIZE) #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
 num_predictors = len(locations) / LOCATIONS_PER_PREDICTOR
 predictor_locations = np.zeros((2,num_predictors))
 
