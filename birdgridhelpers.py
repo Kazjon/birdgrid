@@ -1,9 +1,23 @@
 import numpy as np
+import pandas as pd
+import glob
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
 def load_observations(attributes,species, start_year, end_year):
-	return np.array([])
+path =r'C:\Users\swarna\Desktop\DENSITY\Grid\glob' 
+	allFiles = glob.glob(path + "/*.csv")
+	observations = pd.DataFrame()
+	#attributes=['LATITUDE','LONGITUDE']
+	#species=['Turdus_migratorius']
+	ColumnNames=np.append(attributes,species)
+	list_ = []
+	for file_ in allFiles:
+		df = pd.read_csv(file_,index_col=None,header=0,usecols=ColumnNames)
+		list_.append(df)
+	 observations= pd.concat(list_)
+	return observations
+	#return np.array([])
 
 #Takes in the matrix of observations and bins it into observations based on the provided grid size.
 #Returns an array of dicts, each dict represents one location and contains lat, lon and data for each timestep
