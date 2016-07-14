@@ -59,10 +59,6 @@ Grid_Data=init_birdgrid(observations,grid_size,species)
 #Plot the actual species frequency (from the data) on a map
 def plot_observation_frequency(locations):
 	pass
-
-#Plot the locations of each predictor on a map, overlaid on plot_observation_frequency
-def plot_predictor_locations(predictors,observations):
-	pass
 	
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
 #Uses the location's included coordinates to provide a map insert showing a dot for the location on the US map (this should use matplotlib's "axes" interface as with here http://matplotlib.org/examples/pylab_examples/axes_demo.html)
