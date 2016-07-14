@@ -8,7 +8,6 @@ def load_observations(attributes,species,start_year,end_year):
 	path =r'C:\Users\swarna\Desktop\DENSITY\Grid\glob' 
 	allFiles = glob.glob(path + "/*.csv")
 	observations = pd.DataFrame()
-	
 	ColumnNames=np.append(attributes,species)
 	list_ = []
 	for file_ in allFiles:
@@ -16,6 +15,8 @@ def load_observations(attributes,species,start_year,end_year):
 		list_.append(df)
 	observations= pd.concat(list_)
 	observations=observations[(observations['YEAR']>=start_year)&(observations['YEAR']<=end_year)]
+	observations=observations.replace('X',1) 
+	observations=observations.replace('?',0)
 	return observations
 '''
 attributes=['LATITUDE','LONGITUDE','YEAR','MONTH']
@@ -30,8 +31,6 @@ grid_size=1
 #Returns a dataframe of attributes that are divided into grids, where as each grid square represents the total count of the species found in that location
 def init_birdgrid(observations,grid_size,species):
 	#headers=observations.columns.values
-	observations=observations.replace('X',1) 
-	observations=observations.replace('?',0)
 	lats=observations['LATITUDE']
 	lons=observations['LONGITUDE']
 	observations=observations.convert_objects(convert_numeric=True)
@@ -53,7 +52,7 @@ def init_birdgrid(observations,grid_size,species):
 			GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[species].sum() 
 			df=df.append(GridwiseCount)
 	return df
-Grid_Data=init_birdgrid(observations,grid_size,species)
+
 	
 
 #Plot the actual species frequency (from the data) on a map
@@ -72,7 +71,7 @@ location=[41,-88] #selecting a gridsquare coordinates
 def model_location_novelty_over_time(location):
 	Lat=location[0]
 	Lon=location[1]
-	LocationData = Grid_Data[((Grid_Data['LATITUDE']==Lat) & (Grid_Data['LONGITUDE']==Lon))]
+	LocationData = locations[((locations['LATITUDE']==Lat) & (locations['LONGITUDE']==Lon))]
 	season = "spring"
 	seasons = {"winter": [12,1,2],"spring": [3,4,5],"summer":[6,7,8],"fall":[9,10,11]}
 	wanted=seasons[season]
