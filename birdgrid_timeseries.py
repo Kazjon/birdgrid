@@ -21,7 +21,7 @@ for loc in locations:
 	
 predictors = [] # matrix of models of shape locations x timesteps. 
 for loc in locations:
-	predictors.append(model_bird_novelty(loc))
+	predictors.append(model_location_novelty_over_time(loc))
 
 #Each location will have an array of predictors associated with it -- one per timestep.
 for preds,loc in zip(predictors,locations):
