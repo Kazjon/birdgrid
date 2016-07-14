@@ -57,7 +57,7 @@ Grid_Data=init_birdgrid(observations,grid_size,species)
 	
 
 #Plot the actual species frequency (from the data) on a map
-def plot_observation_frequency(observations):
+def plot_observation_frequency(locations):
 	pass
 
 #Plot the locations of each predictor on a map, overlaid on plot_observation_frequency

@@ -13,7 +13,7 @@ observations = load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR) #Loa
 locations = init_birdgrid(observations, GRID_SIZE, TIME_STEP) #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
 
 #Plot our species frequency observations
-plot_observation_frequency(observations)
+plot_observation_frequency(locations)
 
 #For each location (grid square), plot the birdcount over time. Additionally display the location within the US on a small inset mapbox
 for loc in locations:
