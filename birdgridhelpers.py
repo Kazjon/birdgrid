@@ -119,5 +119,40 @@ def model_location_novelty_over_time(location):
 			 
 		plt.show()
 	return
+	
 
+def plot_observation_frequency(locations):
+	lats = locations['LATITUDE']
+	lats=np.asarray(lats)
+	lons = locations['LONGITUDE']
+	lons=np.asarray(lons)
+	Species_count = locations.iloc[:,-1]
+	Species_count=np.asarray(Species_count)
+	lat_min = min(lats)
+	lat_max = max(lats)
+	lon_min = min(lons)
+	lon_max = max(lons)
+	spatial_resolution = 1
+	fig = plt.figure()
+	x = np.array(lons)
+	y = np.array(lats)
+	z = np.array(Species_count)
+	xinum = (lon_max - lon_min) / spatial_resolution
+	yinum = (lat_max - lat_min) / spatial_resolution
+	xi = np.linspace(lon_min, lon_max + spatial_resolution, xinum)        
+	yi = np.linspace(lat_min, lat_max + spatial_resolution, yinum)        
+	xi, yi = np.meshgrid(xi, yi)
+	zi = griddata(x, y, z, xi, yi, interp='linear')
+	m = Basemap(projection = 'merc',llcrnrlat=lat_min, urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
+	m.drawcoastlines()
+	m.drawstates()
+	m.drawcountries()
+	lat, lon = m.makegrid(zi.shape[1], zi.shape[0])
+	x,y = m(lat, lon)
+	z=zi.reshape(xi.shape)
+	levels=np.linspace(0,z.max(),25)
+	cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
+	plt.colorbar()
+	plt.show()
+	return
 	
