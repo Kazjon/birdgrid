@@ -72,44 +72,52 @@ def model_location_novelty_over_time(location):
 	Lat=location[0]
 	Lon=location[1]
 	LocationData = locations[((locations['LATITUDE']==Lat) & (locations['LONGITUDE']==Lon))]
-	season = "spring"
 	seasons = {"winter": [12,1,2],"spring": [3,4,5],"summer":[6,7,8],"fall":[9,10,11]}
-	wanted=seasons[season]
-	Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
-	Training_years=[2002,2003]
-	predicting_year=[2004]
-	Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
-	Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
-	Train_Data['PERIOD'] = Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='0')
-	Test_Data['PERIOD'] = Test_Data.YEAR.astype(str).str.cat(Test_Data.MONTH.astype(str),sep='0')
-	TrainData=Train_Data['PERIOD']
-	TrainData=TrainData.reshape(-1, 1)
-	TrainData=TrainData.astype(np.float)
-	TrainData_Target=Train_Data[species]
-	TrainData_Target = TrainData_Target.as_matrix()
-	TrainData_Target=TrainData_Target.astype(np.float)
-	TestData=Test_Data['PERIOD']
-	TestData=TestData.reshape(-1, 1)
-	TestData=TestData.astype(np.float)
-	ActualResult=Test_Data[species]
-	regr = linear_model.LinearRegression()
-	regr.fit(TrainData,TrainData_Target)
-	PredictedSpeciesCount=regr.predict(TestData)
-	print('Predicted Species Count:',PredictedSpeciesCount)
-	print('Actual Count of Species:',ActualResult)
-	ErrorInPrediction=abs(PredictedSpeciesCount-ActualResult)
-	print('Individual Error:',ErrorInPrediction) 
+	years=[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011]
+	Training_years=[]
+	#looping through each and every year. Starting from year 2002. Trains on 2002 and tests on 2003. later trains on 2002,2003 and tests on 2004..
+	for year in years:  
+		Training_years.append(year)
+		predicting_year=[year+1]
+		for i,season in zip(range(8),seasons):
+			plt.subplot(4,2,i+1)
+			wanted=seasons[season]
+			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
+			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
+			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
+			Train_Data['PERIOD'] = Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='0')
+			Test_Data['PERIOD'] = Test_Data.YEAR.astype(str).str.cat(Test_Data.MONTH.astype(str),sep='0')
+			TrainData=Train_Data['PERIOD']
+			TrainData=TrainData.reshape(-1, 1)
+			TrainData=TrainData.astype(np.float)
+			TrainData_Target=Train_Data[species]
+			TrainData_Target = TrainData_Target.as_matrix()
+			TrainData_Target=TrainData_Target.astype(np.float)
+			TestData=Test_Data['PERIOD']
+			TestData=TestData.reshape(-1, 1)
+			TestData=TestData.astype(np.float)
+			ActualResult=Test_Data[species]
+			regr = linear_model.LinearRegression()
+			regr.fit(TrainData,TrainData_Target)
+			PredictedSpeciesCount=regr.predict(TestData)
+			print('Predicted Species Count:',PredictedSpeciesCount)
+			print('Actual Count of Species:',ActualResult)
+			ErrorInPrediction=abs(PredictedSpeciesCount-ActualResult)
+			print('Individual Error:',ErrorInPrediction) 
 
-	MaximumError=max(ErrorInPrediction)
-	print('Highestindividual error:',MaximumError)
+			MaximumError=max(ErrorInPrediction)
+			print('Highestindividual error:',MaximumError)
 
-	print("Residual sum of squares: %.2f",np.mean((regr.predict(TestData) - ActualResult) ** 2))
-	print('Coefficients: \n', regr.coef_)
-	plt.scatter(TestData,ActualResult,color='black')
-	plt.plot(TestData, regr.predict(TestData), color='blue',linewidth=3)
-
-	plt.xticks(())
-	plt.yticks(())
-	plt.show()
+			print("Residual sum of squares: %.2f",np.mean((regr.predict(TestData) - ActualResult) ** 2))
+			print('Coefficients: \n', regr.coef_)
+			plt.scatter(TestData,ActualResult,color='black')
+			
+			plt.plot(TestData, regr.predict(TestData), color='blue',linewidth=3)
+			plt.title(season)
+			plt.xticks(())
+			plt.yticks(())
+			 
+		plt.show()
 	return
+
 	
