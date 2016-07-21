@@ -6,7 +6,6 @@ SPECIES = ""
 ATTRIBUTES = []
 START_YEAR = 2002
 END_YEAR = 2016
-TIME_STEP = "monthly" #Can switch to "yearly" or "seasons"
 GRID_SIZE = 1 #Side length of each grid square (in degrees lat/lon)
 
 observations = load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR) #Load these in from somewhere, one row per observation, columns 0 and 1 are lat and lon
@@ -27,3 +26,5 @@ for loc in locations:
 for preds,loc in zip(predictors,locations):
 	for p in preds:
 		plot_birds_over_time(loc, predictor=p)
+		
+plot_predictors(predictors)
