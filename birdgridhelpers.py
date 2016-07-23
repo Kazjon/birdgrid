@@ -1,11 +1,21 @@
 import numpy as np
 import pandas as pd
 import glob
+import math
+from scipy import interpolate
+from datetime import datetime
+from mpl_toolkits.basemap import Basemap
+from matplotlib.mlab import griddata
+from scipy import interpolate
+import csv
+import matplotlib.pyplot as plt
+import pickle
+from sklearn import linear_model
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
 def load_observations(attributes,species,start_year,end_year):
-	path =r'C:\Users\swarna\Desktop\DENSITY\Grid\glob' 
+	path =r'\birdgrid\birdgrid_data' 
 	allFiles = glob.glob(path + "/*.csv")
 	observations = pd.DataFrame()
 	ColumnNames=np.append(attributes,species)
@@ -18,19 +28,12 @@ def load_observations(attributes,species,start_year,end_year):
 	observations=observations.replace('X',1) 
 	observations=observations.replace('?',0)
 	return observations
-'''
-attributes=['LATITUDE','LONGITUDE','YEAR','MONTH']
-species=['Turdus_migratorius']
-start_year=2002
-end_year=2004
-observations=load_observations(attributes,species,start_year,end_year)
-grid_size=1
-'''
+
 #Takes in the matrix of observations and bins it into observations based on the provided grid size.
 #Returns an array of dicts, each dict represents one location and contains lat, lon and data for each timestep
 #Returns a dataframe of attributes that are divided into grids, where as each grid square represents the total count of the species found in that location
-def init_birdgrid(observations,grid_size,species):
-	#headers=observations.columns.values
+
+def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP):
 	lats=observations['LATITUDE']
 	lons=observations['LONGITUDE']
 	observations=observations.convert_objects(convert_numeric=True)
@@ -40,56 +43,31 @@ def init_birdgrid(observations,grid_size,species):
 	lon_max =int(math.floor(max(lons)))
 	GridSquare=[]
 	df=pd.DataFrame([])
-	
-	#starting the grid value with the minimum latitude and longitude values and iterating through the size of the grid 
-
-	for i in range(lat_min,lat_max,grid_size):
-		for j in range(lon_min,lon_max,grid_size):
-			GridSquare=observations[(observations['LATITUDE']>=i)&(observations['LATITUDE']<i+grid_size)&(observations['LONGITUDE']>=j)&(observations['LONGITUDE']<j+grid_size)]
-			GridSquare['LATITUDE']=i #replacing the lat value with the starting value of that particular grid
-			GridSquare['LONGITUDE']=j #replacing the lon value with that of the starting value of that particular grid
-			#replaced lat,lon in order to group the species count
-			GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[species].sum() 
-			df=df.append(GridwiseCount)
+	if TIME_STEP =='monthly':
+		for i in range(lat_min,lat_max,GRID_SIZE):
+			for j in range(lon_min,lon_max,GRID_SIZE):
+				GridSquare=observations[(observations['LATITUDE']>=i)&(observations['LATITUDE']<i+GRID_SIZE)&(observations['LONGITUDE']>=j)&(observations['LONGITUDE']<j+GRID_SIZE)]
+				GridSquare['LATITUDE']=i
+				GridSquare['LONGITUDE']=j
+				GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[SPECIES].sum()
+				df=df.append(GridwiseCount)
+		
+	elif TIME_STEP =='yearly':
+		for i in range(lat_min,lat_max,GRID_SIZE):
+			for j in range(lon_min,lon_max,GRID_SIZE):
+				GridSquare=observations[(observations['LATITUDE']>=i)&(observations['LATITUDE']<i+GRID_SIZE)&(observations['LONGITUDE']>=j)&(observations['LONGITUDE']<j+GRID_SIZE)]
+				GridSquare['LATITUDE']=i
+				GridSquare['LONGITUDE']=j
+				GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR'],as_index=False)[SPECIES].sum()
+				df=df.append(GridwiseCount)
 	return df
+	
 
 	
 
 #Plot the actual species frequency (from the data) on a map
 
 def plot_observation_frequency(locations):
-	lats = locations['LATITUDE']
-	lats=np.asarray(lats)
-	lons = locations['LONGITUDE']
-	lons=np.asarray(lons)
-	Species_count = locations.iloc[:,-1]
-	Species_count=np.asarray(Species_count)
-	lat_min = min(lats)
-	lat_max = max(lats)
-	lon_min = min(lons)
-	lon_max = max(lons)
-	spatial_resolution = 1
-	fig = plt.figure()
-	x = np.array(lons)
-	y = np.array(lats)
-	z = np.array(Species_count)
-	xinum = (lon_max - lon_min) / spatial_resolution
-	yinum = (lat_max - lat_min) / spatial_resolution
-	xi = np.linspace(lon_min, lon_max + spatial_resolution, xinum)        
-	yi = np.linspace(lat_min, lat_max + spatial_resolution, yinum)        
-	xi, yi = np.meshgrid(xi, yi)
-	zi = griddata(x, y, z, xi, yi, interp='linear')
-	m = Basemap(projection = 'merc',llcrnrlat=lat_min, urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
-	m.drawcoastlines()
-	m.drawstates()
-	m.drawcountries()
-	lat, lon = m.makegrid(zi.shape[1], zi.shape[0])
-	x,y = m(lat, lon)
-	z=zi.reshape(xi.shape)
-	levels=np.linspace(0,z.max(),25)
-	cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
-	plt.colorbar()
-	plt.show()
 	return
 	
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
@@ -100,16 +78,14 @@ def plot_birds_over_time(location, predictor=None):
 	
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
-location=[41,-88] #selecting a gridsquare coordinates
-def model_location_novelty_over_time(location):
-	Lat=location[0]
-	Lon=location[1]
-	LocationData = locations[((locations['LATITUDE']==Lat) & (locations['LONGITUDE']==Lon))]
+def model_location_novelty_over_time(loc,SPECIES):
+	locationpredictors=[]
+	LocationData = loc
+	#season = "spring"
 	seasons = {"winter": [12,1,2],"spring": [3,4,5],"summer":[6,7,8],"fall":[9,10,11]}
-	years=[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011]
+	years=[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012]
 	Training_years=[]
-	#looping through each and every year. Starting from year 2002. Trains on 2002 and tests on 2003. later trains on 2002,2003 and tests on 2004..
-	for year in years:  
+	for year in years:
 		Training_years.append(year)
 		predicting_year=[year+1]
 		for i,season in zip(range(8),seasons):
@@ -123,35 +99,17 @@ def model_location_novelty_over_time(location):
 			TrainData=Train_Data['PERIOD']
 			TrainData=TrainData.reshape(-1, 1)
 			TrainData=TrainData.astype(np.float)
-			TrainData_Target=Train_Data[species]
+			TrainData_Target=Train_Data[SPECIES]
 			TrainData_Target = TrainData_Target.as_matrix()
 			TrainData_Target=TrainData_Target.astype(np.float)
 			TestData=Test_Data['PERIOD']
 			TestData=TestData.reshape(-1, 1)
 			TestData=TestData.astype(np.float)
-			ActualResult=Test_Data[species]
+			ActualResult=Test_Data[SPECIES]		
 			regr = linear_model.LinearRegression()
 			regr.fit(TrainData,TrainData_Target)
-			PredictedSpeciesCount=regr.predict(TestData)
-			print('Predicted Species Count:',PredictedSpeciesCount)
-			print('Actual Count of Species:',ActualResult)
-			ErrorInPrediction=abs(PredictedSpeciesCount-ActualResult)
-			print('Individual Error:',ErrorInPrediction) 
-
-			MaximumError=max(ErrorInPrediction)
-			print('Highestindividual error:',MaximumError)
-
-			print("Residual sum of squares: %.2f",np.mean((regr.predict(TestData) - ActualResult) ** 2))
-			print('Coefficients: \n', regr.coef_)
-			plt.scatter(TestData,ActualResult,color='black')
-			
-			plt.plot(TestData, regr.predict(TestData), color='blue',linewidth=3)
-			plt.title(season)
-			plt.xticks(())
-			plt.yticks(())
-			 
-		plt.show()
-	return
+			locationpredictors.append(regr)
+	return locationpredictors
 	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	predictor_coefs = []
