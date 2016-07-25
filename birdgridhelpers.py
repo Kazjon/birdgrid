@@ -78,18 +78,16 @@ def plot_birds_over_time(location, predictor=None):
 	
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
-def model_location_novelty_over_time(loc,SPECIES):
-	locationpredictors=[]
-	LocationData = loc
-	#season = "spring"
+def model_location_novelty_over_time(location,SPECIES):
+	Locationpredictors=[]
+	LocationData = location
 	seasons = {"winter": [12,1,2],"spring": [3,4,5],"summer":[6,7,8],"fall":[9,10,11]}
 	years=[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012]
 	Training_years=[]
 	for year in years:
 		Training_years.append(year)
 		predicting_year=[year+1]
-		for i,season in zip(range(8),seasons):
-			plt.subplot(4,2,i+1)
+		for season in seasons:
 			wanted=seasons[season]
 			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
@@ -105,11 +103,14 @@ def model_location_novelty_over_time(loc,SPECIES):
 			TestData=Test_Data['PERIOD']
 			TestData=TestData.reshape(-1, 1)
 			TestData=TestData.astype(np.float)
-			ActualResult=Test_Data[SPECIES]		
+			ActualResult=Test_Data[SPECIES]
 			regr = linear_model.LinearRegression()
-			regr.fit(TrainData,TrainData_Target)
-			locationpredictors.append(regr)
-	return locationpredictors
+			if len(Train_Data)!=0 and len(TestData)!=0:
+				regr.fit(TrainData,TrainData_Target)
+				Locationpredictors.append(regr)
+			else:
+				continue
+	return Locationpredictors
 	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	predictor_coefs = []
