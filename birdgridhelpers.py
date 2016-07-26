@@ -67,7 +67,42 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP):
 
 #Plot the actual species frequency (from the data) on a map
 
-def plot_observation_frequency(locations):
+def plot_observation_frequency(locations,YEARS,SEASONS,GRID_SIZE):
+	for year in YEARS:
+		for season in SEASONS:
+			wanted=SEASONS[season]
+			Seasonal_Data=(locations.loc[locations['MONTH'].isin(wanted)])
+			lats = np.asarray(Seasonal_Data['LATITUDE'])
+			lons = np.asarray(Seasonal_Data['LONGITUDE'])
+			Species_count = np.asarray(Seasonal_Data.iloc[:,-1])
+			lat_min = min(lats)
+			lat_max = max(lats)
+			lon_min = min(lons)
+			lon_max = max(lons)
+			spatial_resolution = 1
+			fig = plt.figure()
+			x = np.array(lons)
+			y = np.array(lats)
+			z = np.array(Species_count)
+			xinum = (lon_max - lon_min) / spatial_resolution
+			yinum = (lat_max - lat_min) / spatial_resolution
+			xi = np.linspace(lon_min, lon_max + spatial_resolution, xinum)        
+			yi = np.linspace(lat_min, lat_max + spatial_resolution, yinum)        
+			xi, yi = np.meshgrid(xi, yi)
+			zi = griddata(x, y, z, xi, yi, interp='linear')
+			m = Basemap(projection = 'merc',llcrnrlat=lat_min, urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
+			m.drawcoastlines()
+			m.drawstates()
+			m.drawcountries()
+			m.drawparallels(np.arange(lat_min,lat_max,GRID_SIZE))
+			m.drawmeridians(np.arange(lon_min,lon_max,GRID_SIZE))
+			lat, lon = m.makegrid(zi.shape[1], zi.shape[0])
+			x,y = m(lat, lon)
+			z=zi.reshape(xi.shape)
+			levels=np.linspace(0,z.max(),25)
+			cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
+			plt.colorbar()
+			plt.savefig(str(year)+"-"+str(season)+".png")
 	return
 	
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
@@ -78,17 +113,15 @@ def plot_birds_over_time(location, predictor=None):
 	
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
-def model_location_novelty_over_time(location,SPECIES):
+def model_location_novelty_over_time(location,SPECIES,YEARS,SEASONS):
 	Locationpredictors=[]
 	LocationData = location
-	seasons = {"winter": [12,1,2],"spring": [3,4,5],"summer":[6,7,8],"fall":[9,10,11]}
-	years=[2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012]
 	Training_years=[]
-	for year in years:
+	for year in YEARS:
 		Training_years.append(year)
 		predicting_year=[year+1]
-		for season in seasons:
-			wanted=seasons[season]
+		for season in SEASONS:
+			wanted=SEASONS[season]
 			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
