@@ -1,5 +1,5 @@
 import numpy as np
-from birdgridhelpers import load_observations,init_birdgrid,plot_observation_frequency,model_location_novelty_over_time
+from birdgridhelpers import load_observations,init_birdgrid,plot_observation_frequency,model_location_novelty_over_time,plot_birds_over_time
 import numpy as np
 import glob
 import math
@@ -29,8 +29,8 @@ locations=init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP)  #Calculate th
 plot_observation_frequency(locations,YEARS,SEASONS,GRID_SIZE)
 
 #For each location (grid square), plot the birdcount over time. Additionally display the location within the US on a small inset mapbox
-for loc in locations:
-	plot_birds_over_time(loc)
+for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
+	plot_birds_over_time(location,SPECIES)
 	
 # matrix of models of shape locations x timesteps. 
 for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
