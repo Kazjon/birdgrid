@@ -114,7 +114,11 @@ def plot_birds_over_time(location, predictor=None):
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
 def model_location_novelty_over_time(location,SPECIES,YEARS,SEASONS):
-	Locationpredictors=[]
+	Regression_Model=[]
+	Maximum_Error=[]
+	Mean_Error=[]
+	Regression_Coefficient=[]
+	d={}
 	LocationData = location
 	Training_years=[]
 	for year in YEARS:
@@ -136,14 +140,26 @@ def model_location_novelty_over_time(location,SPECIES,YEARS,SEASONS):
 			TestData=Test_Data['PERIOD']
 			TestData=TestData.reshape(-1, 1)
 			TestData=TestData.astype(np.float)
-			ActualResult=Test_Data[SPECIES]
+			Actual_Species_Count=Test_Data[SPECIES]
 			regr = linear_model.LinearRegression()
 			if len(Train_Data)!=0 and len(TestData)!=0:
 				regr.fit(TrainData,TrainData_Target)
-				Locationpredictors.append(regr)
+				Regression_Model.append(regr)
+				Predicted_Species_Count=regr.predict(TestData)
+				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
+				Maximum_Error.append(MaxError)				
+				MeanError=np.mean((regr.predict(TestData) - Actual_Species_Count) ** 2)
+				Mean_Error.append(MeanError)
+				Regression_Coefficient.append(regr.coef_)
 			else:
 				continue
-	return Locationpredictors
+				
+	d['model']=Regression_Model
+	d['stats']={}
+	d['stats']['score']=np.reshape(Regression_Coefficient, len(Regression_Coefficient))
+	d['stats']['max_error']=np.reshape(Maximum_Error, len(Maximum_Error))
+	d['stats']['mean_error']=np.reshape(Mean_Error, len(Mean_Error))
+	return d
 	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	predictor_coefs = []
