@@ -181,7 +181,7 @@ def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	for preds in predictors:
 		for p in preds:
 			predictor_coefs.append(p["model"].coef_)
-			predictor_intercepts.append(p["model"]predict([0])[0])
+			predictor_intercepts.append(p["model"].predict([0])[0])
 			predictor_errors.append(p["stats"]["score"])
 	plt.figure(figsize=(10,10))
 	plt.scatter(predictor_coefs,predictor_intercepts,s=[e * max_size for e in predictor_errors])
