@@ -71,7 +71,8 @@ def plot_observation_frequency(locations,YEARS,SEASONS,GRID_SIZE):
 	for year in YEARS:
 		for season in SEASONS:
 			wanted=SEASONS[season]
-			Seasonal_Data=(locations.loc[locations['MONTH'].isin(wanted)])
+			Yearly_Data=(locations.loc[locations['YEAR']==year])
+			Seasonal_Data=(Yearly_Data.loc[Yearly_Data['MONTH'].isin(wanted)])
 			lats = np.asarray(Seasonal_Data['LATITUDE'])
 			lons = np.asarray(Seasonal_Data['LONGITUDE'])
 			Species_count = np.asarray(Seasonal_Data.iloc[:,-1])
