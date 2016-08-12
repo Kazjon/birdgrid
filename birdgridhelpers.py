@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 import glob
 import math
+import os.path
 from scipy import interpolate
+import datetime as dt
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
 from matplotlib.mlab import griddata
@@ -11,11 +13,12 @@ import csv
 import matplotlib.pyplot as plt
 import pickle
 from sklearn import linear_model
+import matplotlib.dates as mdates
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
 def load_observations(attributes,species,start_year,end_year):
-	path =r'\birdgrid\birdgrid_data' 
+	path = os.path.normpath('Birdgriddata') 
 	allFiles = glob.glob(path + "/*.csv")
 	observations = pd.DataFrame()
 	ColumnNames=np.append(attributes,species)

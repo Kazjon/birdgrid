@@ -3,8 +3,10 @@ from birdgridhelpers import load_observations,init_birdgrid,plot_observation_fre
 import numpy as np
 import glob
 import math
+import os.path
 import pandas as pd
 from scipy import interpolate
+import datetime as dt
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
 from matplotlib.mlab import griddata
@@ -12,6 +14,7 @@ from scipy import interpolate
 import csv 
 import matplotlib.pyplot as plt
 from sklearn import linear_model
+import matplotlib.dates as mdates
 
 SPECIES = ['']
 ATTRIBUTES = ['LATITUDE','LONGITUDE','YEAR','MONTH']
