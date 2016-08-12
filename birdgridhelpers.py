@@ -17,17 +17,17 @@ import matplotlib.dates as mdates
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
-def load_observations(attributes,species,start_year,end_year):
+def load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR):
 	path = os.path.normpath('Birdgriddata') 
 	allFiles = glob.glob(path + "/*.csv")
 	observations = pd.DataFrame()
-	ColumnNames=np.append(attributes,species)
+	ColumnNames=np.append(ATTRIBUTES, SPECIES)
 	list_ = []
 	for file_ in allFiles:
 		df = pd.read_csv(file_,index_col=None,header=0,usecols=ColumnNames)
 		list_.append(df)
 	observations= pd.concat(list_)
-	observations=observations[(observations['YEAR']>=start_year)&(observations['YEAR']<=end_year)]
+	observations=observations[(observations['YEAR']>=START_YEAR)&(observations['YEAR']<=END_YEAR)]
 	observations=observations.replace('X',1) 
 	observations=observations.replace('?',0)
 	return observations
@@ -70,8 +70,8 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP):
 
 #Plot the actual species frequency (from the data) on a map
 
-def plot_observation_frequency(locations,YEARS,SEASONS,GRID_SIZE):
-	for year in YEARS:
+def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
+	for year in range(START_YEAR,END_YEAR+1):
 		for season in SEASONS:
 			wanted=SEASONS[season]
 			Yearly_Data=(locations.loc[locations['YEAR']==year])
@@ -131,7 +131,7 @@ def plot_birds_over_time(location,SPECIES):
 	
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
-def model_location_novelty_over_time(location,SPECIES,YEARS,SEASONS):
+def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR):
 	Regression_Model=[]
 	Maximum_Error=[]
 	Mean_Error=[]
@@ -139,7 +139,7 @@ def model_location_novelty_over_time(location,SPECIES,YEARS,SEASONS):
 	d={}
 	LocationData = location
 	Training_years=[]
-	for year in YEARS:
+	for year in range(START_YEAR,END_YEAR):
 		Training_years.append(year)
 		predicting_year=[year+1]
 		for season in SEASONS:
