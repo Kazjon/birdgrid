@@ -95,14 +95,15 @@ def plot_observation_frequency(locations,YEARS,SEASONS,GRID_SIZE):
 			m.drawcoastlines()
 			m.drawstates()
 			m.drawcountries()
-			m.drawparallels(np.arange(lat_min,lat_max,GRID_SIZE))
-			m.drawmeridians(np.arange(lon_min,lon_max,GRID_SIZE))
+			m.drawparallels(np.arange(lat_min,lat_max,GRID_SIZE),labels=[False,True,True,False])
+			m.drawmeridians(np.arange(lon_min,lon_max,GRID_SIZE),labels=[True,False,False,True])
 			lat, lon = m.makegrid(zi.shape[1], zi.shape[0])
 			x,y = m(lat, lon)
 			z=zi.reshape(xi.shape)
 			levels=np.linspace(0,z.max(),25)
 			cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
 			plt.colorbar()
+			plt.title(str(year)+"-"+str(season))
 			plt.savefig(str(year)+"-"+str(season)+".png")
 	return
 	
