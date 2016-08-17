@@ -136,8 +136,17 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	Maximum_Error=[]
 	Mean_Error=[]
 	Regression_Coefficient=[]
-	d={}
+	Predictions=[]
+	ActualSpeciesCount=[]
+	TestDataforplotting=[]
+	seasonlist=[]
+	predictingyearlist=[]
+	latitude=[]
+	longitude=[]
+	TrainDataforplotting=[]
+	TrainDataSpeciesCount=[]
 	LocationData = location
+	d={}
 	Training_years=[]
 	for year in range(START_YEAR,END_YEAR):
 		Training_years.append(year)
@@ -161,7 +170,6 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			Actual_Species_Count=Test_Data[SPECIES]
 			regr = linear_model.LinearRegression()
 			if len(Train_Data)!=0 and len(TestData)!=0:
-				regr.fit(TrainData,TrainData_Target)
 				Regression_Model.append(regr)
 				Predicted_Species_Count=regr.predict(TestData)
 				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
@@ -169,15 +177,64 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				MeanError=np.mean((regr.predict(TestData) - Actual_Species_Count) ** 2)
 				Mean_Error.append(MeanError)
 				Regression_Coefficient.append(regr.coef_)
+				Predictions.append(Predicted_Species_Count)
+				ActualSpeciesCount.append(Actual_Species_Count)
+				TestDataforplotting.append(TestData)
+				seasonlist.append(season)
+				predictingyearlist.append(predicting_year)
+				latitude.append(lat)
+				longitude.append(lon)
+				TrainDataforplotting.append(TrainData)
+				TrainDataSpeciesCount.append(TrainData_Target)
 			else:
 				continue
-				
+		
 	d['model']=Regression_Model
+	d['location']={}
 	d['stats']={}
+	d['location']['latitude']=latitude
+	d['location']['longitude']=longitude
 	d['stats']['score']=np.reshape(Regression_Coefficient, len(Regression_Coefficient))
 	d['stats']['max_error']=np.reshape(Maximum_Error, len(Maximum_Error))
 	d['stats']['mean_error']=np.reshape(Mean_Error, len(Mean_Error))
+	d['predictions']=Predictions
+	d['actualspeciescount']=ActualSpeciesCount
+	d['TestDataforplotting']=TestDataforplotting
+	d['seasonlist']=seasonlist
+	d['predictingyearlist']=np.reshape(predictingyearlist,len(predictingyearlist))
+	d['traindataspeciescount']=TrainDataSpeciesCount
+	d['traindataforplotting']=TrainDataforplotting
 	return d
+	
+def plot_birds_over_time(predictors):	
+	for p in predictors:
+		TrainData=[]
+		TrainData_Frequency=[]
+		for q,r,z,s,t,u,v,w,o in zip(p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['traindataspeciescount'],p['traindataforplotting'],p['seasonlist'],p['predictingyearlist']):
+			plt.figure()
+			predictions=q
+			actualspeciescount=r
+			TestDataforplotting=z
+			latitude=s
+			longitude=t
+			traindataspeciescount=u
+			TrainData_Frequency.append(traindataspeciescount)
+			TrainData_Count=[y for x in TrainData_Frequency for y in x]
+			traindataforplotting=v
+			TrainData.append(traindataforplotting)
+			td=[y for x in TrainData for y in x]
+			season=w
+			predicting_year=o
+			lat=np.unique(d)
+			lon=np.unique(e)
+			plt.scatter(traindataforplotting,TrainData_Frequency,color='black',alpha = 0.5)
+			plt.scatter(TestDataforplotting,actualspeciescount,color='black')
+			plt.plot(TestDataforplotting,predictions,color='blue',linewidth=3)
+			plt.xticks(TestDataforplotting,TestDataforplotting)
+			plt.yticks(predictions,predictions)
+			plt.title(str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season))
+			plt.savefig(str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
+			plt.close()
 	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	predictor_coefs = []

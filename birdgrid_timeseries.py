@@ -41,8 +41,12 @@ for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 
 
 #Each location will have an array of predictors associated with it -- one per timestep.
+'''
 for preds,loc in zip(predictors,locations):
 	for p in preds:
 		plot_birds_over_time(loc, predictor=p)
+'''
+
+plot_birds_over_time(predictors)
 		
 plot_predictors(predictors)
