@@ -153,6 +153,10 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 		predicting_year=[year+1]
 		for season in SEASONS:
 			wanted=SEASONS[season]
+			Train_DataPlotting=(LocationData.loc[LocationData['YEAR'].isin(Training_years)])
+			Train_DataPlotting['PERIOD'] = Train_DataPlotting.YEAR.astype(str).str.cat(Train_DataPlotting.MONTH.astype(str),sep='/')
+			Train_Data_Plotting=Train_DataPlotting['PERIOD']
+			Train_Data_Plotting_Frequency=Train_DataPlotting[SPECIES]
 			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
@@ -208,32 +212,31 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	
 def plot_birds_over_time(predictors):	
 	for p in predictors:
-		TrainData=[]
-		TrainData_Frequency=[]
-		for q,r,z,s,t,u,v,w,o in zip(p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['traindataspeciescount'],p['traindataforplotting'],p['seasonlist'],p['predictingyearlist']):
+		for q,r,z,m,t,u,v,w,o in zip(p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['traindataspeciescount'],p['traindataforplotting'],p['seasonlist'],p['predictingyearlist']):
 			plt.figure()
 			predictions=q
 			actualspeciescount=r
 			TestDataforplotting=z
-			latitude=s
+			TestDataforplotting = [l[0] for l in TestDataforplotting]
+			TestDataforplotting = [str(int(s)) for s in TestDataforplotting]
+			TestDataforplotting = [s[:4]+'/'+s[4:] for s in TestDataforplotting]
+			TestDataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in TestDataforplotting]
+			latitude=m
 			longitude=t
-			traindataspeciescount=u
-			TrainData_Frequency.append(traindataspeciescount)
-			TrainData_Count=[y for x in TrainData_Frequency for y in x]
+			TrainData_Frequency=u
 			traindataforplotting=v
-			TrainData.append(traindataforplotting)
-			td=[y for x in TrainData for y in x]
+			traindataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in traindataforplotting]
 			season=w
 			predicting_year=o
-			lat=np.unique(d)
-			lon=np.unique(e)
-			plt.scatter(traindataforplotting,TrainData_Frequency,color='black',alpha = 0.5)
+			lat=np.unique(latitude)
+			lon=np.unique(longitude)
+			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m'))
+			plt.plot_date(x=traindataforplotting,y=TrainData_Frequency)
+			plt.gcf().autofmt_xdate()
 			plt.scatter(TestDataforplotting,actualspeciescount,color='black')
 			plt.plot(TestDataforplotting,predictions,color='blue',linewidth=3)
-			plt.xticks(TestDataforplotting,TestDataforplotting)
-			plt.yticks(predictions,predictions)
 			plt.title(str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season))
-			plt.savefig(str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
+			plt.savefig("image"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
 			plt.close()
 	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
