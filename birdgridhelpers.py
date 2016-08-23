@@ -108,8 +108,9 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
 			plt.colorbar()
 			plt.title(str(year)+"-"+str(season))
 			plt.savefig(str(year)+"-"+str(season)+".png")
+			plt.close()
 	return
-	
+'''	
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
 #Uses the location's included coordinates to provide a map insert showing a dot for the location on the US map (this should use matplotlib's "axes" interface as with here http://matplotlib.org/examples/pylab_examples/axes_demo.html)
 #The optional "predictor" object overlays the expectations of a particular predictor (which is associated with a particular timestamp)
@@ -128,7 +129,7 @@ def plot_birds_over_time(location,SPECIES):
 	plt.gcf().autofmt_xdate()
 	plt.savefig(str(lat)+"-"+str(lon)+".png")
 	return
-	
+'''	
 #Makes a prediction of the observation for each timestep as a sklearn Pipeline object
 #To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
 def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR):
@@ -160,8 +161,8 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
-			Train_Data['PERIOD'] = Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='0')
-			Test_Data['PERIOD'] = Test_Data.YEAR.astype(str).str.cat(Test_Data.MONTH.astype(str),sep='0')
+			Train_Data['PERIOD'] = Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str))
+			Test_Data['PERIOD'] = Test_Data.YEAR.astype(str).str.cat(Test_Data.MONTH.astype(str))
 			TrainData=Train_Data['PERIOD']
 			TrainData=TrainData.reshape(-1, 1)
 			TrainData=TrainData.astype(np.float)
@@ -172,8 +173,11 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			TestData=TestData.reshape(-1, 1)
 			TestData=TestData.astype(np.float)
 			Actual_Species_Count=Test_Data[SPECIES]
+			latt=Test_Data['LATITUDE']
+			long=Test_Data['LONGITUDE']
 			regr = linear_model.LinearRegression()
 			if len(Train_Data)!=0 and len(TestData)!=0:
+				regr.fit(TrainData,TrainData_Target)
 				Regression_Model.append(regr)
 				Predicted_Species_Count=regr.predict(TestData)
 				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
@@ -186,10 +190,10 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				TestDataforplotting.append(TestData)
 				seasonlist.append(season)
 				predictingyearlist.append(predicting_year)
-				latitude.append(lat)
-				longitude.append(lon)
-				TrainDataforplotting.append(TrainData)
-				TrainDataSpeciesCount.append(TrainData_Target)
+				latitude.append(latt)
+				longitude.append(long)
+				TrainDataforplotting.append(Train_Data_Plotting)
+				TrainDataSpeciesCount.append(Train_Data_Plotting_Frequency)
 			else:
 				continue
 		
@@ -239,6 +243,7 @@ def plot_birds_over_time(predictors):
 			plt.savefig("image"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
 			plt.close()
 	
+'''	
 def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	predictor_coefs = []
 	predictor_intercepts = []
@@ -254,3 +259,4 @@ def plot_predictors(predictors,max_size=10, out_fname = "predictor_plot.png"):
 	plt.ylabel("Regression intercept")
 	plt.savefig(out_fname)
 	
+'''
