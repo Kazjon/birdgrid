@@ -1,5 +1,5 @@
 import numpy as np
-from birdgridhelpers import load_observations,init_birdgrid,plot_observation_frequency,model_location_novelty_over_time,plot_birds_over_time
+from birdgridhelpers import load_observations,init_birdgrid,plot_observation_frequency,model_location_novelty_over_time,plot_birds_over_time,plot_predictors
 import numpy as np
 import glob
 import math
@@ -39,13 +39,7 @@ for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 	predictors.append(model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR))
 	
-plot_birds_over_time(predictors)
+plot_birds_over_time(predictors,SPECIES)
 
-'''
-#Each location will have an array of predictors associated with it -- one per timestep.
-for preds,loc in zip(predictors,locations):
-	for p in preds:
-		plot_birds_over_time(loc, predictor=p)
 		
-plot_predictors(predictors)
-'''
+plot_predictors(predictors,max_size=100, out_fname ='predictor_plot')
