@@ -74,7 +74,8 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
 			Seasonal_Data=(Yearly_Data.loc[Yearly_Data['MONTH'].isin(wanted)])
 			lats = np.asarray(Seasonal_Data['LATITUDE'])
 			lons = np.asarray(Seasonal_Data['LONGITUDE'])
-			Species_count = np.asarray(Seasonal_Data.iloc[:,-1])
+			Species_count=np.asarray(Seasonal_Data[SPECIES])
+			Species_count=np.reshape(Species_count,len(Species_count))
 			lat_min = min(lats)
 			lat_max = max(lats)
 			lon_min = min(lons)
@@ -102,9 +103,9 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
 			levels=np.linspace(0,z.max(),25)
 			cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
 			plt.colorbar()
-			plt.title(str(year)+"-"+str(season))
+			plt.title(str(SPECIES)+"-"+str(year)+"-"+str(season))
 			#plt.show()
-			plt.savefig(str(year)+"-"+str(season)+".png")
+			plt.savefig(str(SPECIES)+"-"+str(year)+"-"+str(season)+".png")
 			plt.close()
 	return
 '''	
@@ -163,7 +164,14 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			NonSeasonalDataFrequency=NonSeasonalData[SPECIES]
 			Seasonal_Data=(LocationData.loc[LocationData['MONTH'].isin(wanted)])
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
+			max_train_year=max(Training_years)
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
+			if season =='winter':
+				Test_Data=Test_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)], ignore_index=True)
+				#Test_Data=pd.concat(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)],Test_Data)
+				Test_Data=Test_Data[(Test_Data['YEAR']==predicting_year)&(Test_Data['MONTH']!=12)]
+				Train_Data=Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)]
+			
 			TrainData=Train_Data['timeframe']
 			TrainData=TrainData.reshape(-1,1)
 			Seasonwise_TrainData=Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='/')
@@ -180,7 +188,12 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			if len(Train_Data)!=0 and len(TestData)!=0:
 				regr.fit(TrainData,TrainData_Target)
 				Regression_Model.append(regr)
-				Predicted_Species_Count=regr.predict(TestData)		
+				Predicted_Species_Count=regr.predict(TestData)
+				#model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression())
+				#model_ransac.fit(TrainData,TrainData_Target)
+				#inlier_mask = model_ransac.inlier_mask_
+				#outlier_mask = np.logical_not(inlier_mask)
+				#Predicted_Species_Count_ransac=regr.predict(TestData)
 				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
 				Maximum_Error.append(MaxError)				
 				MeanError=np.mean((regr.predict(TestData) - Actual_Species_Count) ** 2)
