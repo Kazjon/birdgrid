@@ -137,7 +137,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	Regression_Coefficient=[]
 	Regression_Intercepts=[]
 	Regression_Score=[]
-	Predictions=[]
+	LinearPredictions=[]
 	ActualSpeciesCount=[]
 	TestDataforplotting=[]
 	seasonlist=[]
@@ -149,6 +149,8 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	SeasonwiseTrainData=[]
 	SeasonwiseTrainDataFrequency=[]
 	train=[]
+	Ransacpredictions=[]
+	Ransac_model=[]
 	LocationData = location
 	d={}
 	Training_years=[]
@@ -189,18 +191,18 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				regr.fit(TrainData,TrainData_Target)
 				Regression_Model.append(regr)
 				Predicted_Species_Count=regr.predict(TestData)
-				#model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression())
-				#model_ransac.fit(TrainData,TrainData_Target)
-				#inlier_mask = model_ransac.inlier_mask_
-				#outlier_mask = np.logical_not(inlier_mask)
-				#Predicted_Species_Count_ransac=regr.predict(TestData)
+				model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),residual_threshold=0.02,min_samples=1)
+				model_ransac.fit(TrainData,TrainData_Target)
+				inlier_mask = model_ransac.inlier_mask_
+				outlier_mask = np.logical_not(inlier_mask)
+				Predicted_Species_Count_ransac=model_ransac.predict(TestData)
 				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
 				Maximum_Error.append(MaxError)				
 				MeanError=np.mean((regr.predict(TestData) - Actual_Species_Count) ** 2)
 				Mean_Error.append(MeanError)
 				Score=regr.score(TestData,Actual_Species_Count)
 				Regression_Score.append(Score)
-				Predictions.append(Predicted_Species_Count)
+				LinearPredictions.append(Predicted_Species_Count)
 				ActualSpeciesCount.append(Actual_Species_Count)
 				TestDataforplotting.append(TestData_Plotting)
 				seasonlist.append(season)
@@ -212,6 +214,9 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				SeasonwiseTrainData.append(Seasonwise_TrainData)
 				SeasonwiseTrainDataFrequency.append(Seasonwise_Traindata_Frequency)
 				train.append(TrainData)
+				Ransacpredictions.append(Predicted_Species_Count_ransac)
+				Ransac_model.append(model_ransac)
+				
 			else:
 				continue
 		
@@ -223,7 +228,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	d['stats']['score']=Regression_Score
 	d['stats']['max_error']=np.reshape(Maximum_Error, len(Maximum_Error))
 	d['stats']['mean_error']=np.reshape(Mean_Error, len(Mean_Error))
-	d['predictions']=Predictions
+	d['Linearpredictions']=LinearPredictions
 	d['actualspeciescount']=ActualSpeciesCount
 	d['TestDataforplotting']=TestDataforplotting
 	d['seasonlist']=seasonlist
@@ -233,14 +238,17 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	d['seasonwisetraindata']=SeasonwiseTrainData
 	d['seasonwisetrainDatafrequency']=SeasonwiseTrainDataFrequency
 	d['traindata']=train
+	d['ransacpredictions']=Ransacpredictions
+	d['ransac_model']=Ransac_model
 	return d
 	
 def plot_birds_over_time(predictors,SPECIES):	
 	for p in predictors:
-		for regressor_model,predictions,actualspeciescount,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData in zip(p['model'],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata']):
+			for regressor_model,linearpredictions,actualspeciescount,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,ransacpredictions,ransac_model in zip(p['model'],p["Linearpredictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['ransacpredictions'],p['ransac_model']):
 			plt.figure()
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in TestDataforplotting]
 			seasontraindatapredictions=regressor_model.predict(TrainData)     #To plot the predictor line for seasonal train data
+			seasontraindataransacpredictions=ransac_model.predict(TrainData)
 			NonSeasonalData = [dt.datetime.strptime(d,'%Y/%m').date() for d in NonSeasonalData]
 			SeasonTrainData = [dt.datetime.strptime(d,'%Y/%m').date() for d in SeasonTrainData]
 			lat=np.unique(latitude)
@@ -250,10 +258,12 @@ def plot_birds_over_time(predictors,SPECIES):
 			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency)                                              #Scatterplot of Seasonal Train Data
 			plt.gcf().autofmt_xdate()
 			plt.scatter(TestDataforplotting,actualspeciescount,color='black')                                     #Scatter plot of Test Data with Actual Frequencies
-			plt.plot(TestDataforplotting,predictions,'-',linewidth=3,label="predictor line")                     #Plotting predictor line for Test Data
-			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=3,label="Train data predictor line")  #plotting predictor line for sesonal train data
+			plt.plot(TestDataforplotting,linearpredictions,'r-',linewidth=3)                     #Plotting predictor line for Test Data
+			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=3)  #plotting predictor line for sesonal train data
+			plt.plot(TestDataforplotting,ransacpredictions,'b-')
+			plt.plot(SeasonTrainData,seasontraindataransacpredictions,'b-')
 			plt.title(str(SPECIES)+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season))
-			plt.legend()
+			#plt.legend()
 			#plt.show()
 			plt.savefig(str(SPECIES)+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
 			plt.close()
