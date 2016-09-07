@@ -29,12 +29,13 @@ observations = load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR) #Loa
 locations=init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR)  #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
 
 #Plot our species frequency observations
-plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR)
+plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR,SPECIES)
 '''
 #For each location (grid square), plot the birdcount over time. Additionally display the location within the US on a small inset mapbox
 for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 	plot_birds_over_time(location,SPECIES)
 '''
+
 # matrix of models of shape locations x timesteps. 
 for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 	predictors.append(model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR))

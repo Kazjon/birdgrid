@@ -66,7 +66,7 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR):
 		
 
 #Plot the actual species frequency (from the data) on a map
-def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
+def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR,SPECIES):
 	for year in range(START_YEAR,END_YEAR+1):
 		for season in SEASONS:
 			wanted=SEASONS[season]
@@ -80,7 +80,7 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
 			lat_max = max(lats)
 			lon_min = min(lons)
 			lon_max = max(lons)
-			spatial_resolution = 1
+			spatial_resolution = 1 
 			fig = plt.figure()
 			x = np.array(lons)
 			y = np.array(lats)
@@ -108,7 +108,7 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR):
 			plt.savefig(str(SPECIES)+"-"+str(year)+"-"+str(season)+".png")
 			plt.close()
 	return
-'''	
+'''
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
 #Uses the location's included coordinates to provide a map insert showing a dot for the location on the US map (this should use matplotlib's "axes" interface as with here http://matplotlib.org/examples/pylab_examples/axes_demo.html)
 #The optional "predictor" object overlays the expectations of a particular predictor (which is associated with a particular timestamp)
@@ -127,9 +127,9 @@ def plot_birds_over_time(location,SPECIES):
 	plt.gcf().autofmt_xdate()
 	plt.savefig(str(lat)+"-"+str(lon)+".png")
 	return
+
 '''
-#Makes a prediction of the observation for each timestep as a sklearn Pipeline object
-#To start with, try predicting for each month using the data only for that season.  That should allow you to use linear regression.
+
 def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR):
 	Regression_Model=[]
 	Maximum_Error=[]
@@ -151,6 +151,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	train=[]
 	Ransacpredictions=[]
 	Ransac_model=[]
+	tr= pd.DataFrame()
 	LocationData = location
 	d={}
 	Training_years=[]
@@ -169,10 +170,10 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			max_train_year=max(Training_years)
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
 			if season =='winter':
-				Test_Data=Test_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)], ignore_index=True)
-				#Test_Data=pd.concat(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)],Test_Data)
 				Test_Data=Test_Data[(Test_Data['YEAR']==predicting_year)&(Test_Data['MONTH']!=12)]
-				Train_Data=Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)]
+				Test_Data=Test_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)], ignore_index=True)
+				tr=Train_Data[(Train_Data['YEAR']!=max_train_year)]
+				Train_Data=tr.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)],ignore_index=True)
 			
 			TrainData=Train_Data['timeframe']
 			TrainData=TrainData.reshape(-1,1)
@@ -244,7 +245,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	
 def plot_birds_over_time(predictors,SPECIES):	
 	for p in predictors:
-			for regressor_model,linearpredictions,actualspeciescount,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,ransacpredictions,ransac_model in zip(p['model'],p["Linearpredictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['ransacpredictions'],p['ransac_model']):
+		for regressor_model,linearpredictions,actualspeciescount,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,ransacpredictions,ransac_model in zip(p['model'],p["Linearpredictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['ransacpredictions'],p['ransac_model']):
 			plt.figure()
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in TestDataforplotting]
 			seasontraindatapredictions=regressor_model.predict(TrainData)     #To plot the predictor line for seasonal train data
@@ -254,10 +255,10 @@ def plot_birds_over_time(predictors,SPECIES):
 			lat=np.unique(latitude)
 			lon=np.unique(longitude)
 			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m'))
-			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3)                                    #Scatter plot of Non-Seasonal-Data over Training years
-			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency)                                              #Scatterplot of Seasonal Train Data
+			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3)                      #Scatter plot of Non-Seasonal-Data over Training years
+			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency)                                #Scatterplot of Seasonal Train Data
 			plt.gcf().autofmt_xdate()
-			plt.scatter(TestDataforplotting,actualspeciescount,color='black')                                     #Scatter plot of Test Data with Actual Frequencies
+			plt.scatter(TestDataforplotting,actualspeciescount,color='black')                    #Scatter plot of Test Data with Actual Frequencies
 			plt.plot(TestDataforplotting,linearpredictions,'r-',linewidth=3)                     #Plotting predictor line for Test Data
 			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=3)  #plotting predictor line for sesonal train data
 			plt.plot(TestDataforplotting,ransacpredictions,'b-')
@@ -287,4 +288,3 @@ def plot_predictors(predictors,max_size,out_fname):
 	plt.savefig(str(out_fname)+".png")
 	plt.close()
 	return
-	
