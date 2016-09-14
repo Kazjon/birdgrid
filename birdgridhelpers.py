@@ -162,6 +162,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			wanted=SEASONS[season]
 			NonSeasonal_Data=(LocationData.loc[~LocationData['MONTH'].isin(wanted)])
 			NonSeasonalData=(NonSeasonal_Data.loc[NonSeasonal_Data['YEAR'].isin(Training_years)])
+			NonSeasonalData=NonSeasonalData.append(NonSeasonal_Data.loc[NonSeasonal_Data['YEAR'].isin(predicting_year)],ignore_index=True)
 			NonSeasonalDataTimeframe=NonSeasonalData['timeframe']
 			NonSeasonalDataforPlotting = NonSeasonalData.YEAR.astype(str).str.cat(NonSeasonalData.MONTH.astype(str),sep='/')
 			NonSeasonalDataFrequency=NonSeasonalData[SPECIES]
@@ -169,12 +170,14 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			Train_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(Training_years)])
 			max_train_year=max(Training_years)
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
+			
 			if season =='winter':
 				Test_Data=Test_Data[(Test_Data['YEAR']==predicting_year)&(Test_Data['MONTH']!=12)]
 				Test_Data=Test_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)], ignore_index=True)
+				#Test_Data=pd.concat(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)],Test_Data)
 				tr=Train_Data[(Train_Data['YEAR']!=max_train_year)]
 				Train_Data=tr.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)],ignore_index=True)
-			
+				
 			TrainData=Train_Data['timeframe']
 			TrainData=TrainData.reshape(-1,1)
 			Seasonwise_TrainData=Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='/')
@@ -192,10 +195,12 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				regr.fit(TrainData,TrainData_Target)
 				Regression_Model.append(regr)
 				Predicted_Species_Count=regr.predict(TestData)
-				model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),residual_threshold=0.02,min_samples=1)
+				#medianTD=np.median(TrainData_Target)
+				#residual_threshold=np.median([abs(x - medianTD) for x in TrainData_Target])
+				model_ransac = linear_model.RANSACRegressor(linear_model.LinearRegression(),min_samples=1,residual_threshold=1)
 				model_ransac.fit(TrainData,TrainData_Target)
-				inlier_mask = model_ransac.inlier_mask_
-				outlier_mask = np.logical_not(inlier_mask)
+				#inlier_mask = model_ransac.inlier_mask_
+				#outlier_mask = np.logical_not(inlier_mask)
 				Predicted_Species_Count_ransac=model_ransac.predict(TestData)
 				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
 				Maximum_Error.append(MaxError)				
@@ -243,28 +248,60 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	d['ransac_model']=Ransac_model
 	return d
 	
-def plot_birds_over_time(predictors,SPECIES):	
+def plot_birds_over_time(predictors,SPECIES,locations):	
+	locationslatitude = np.asarray(locations['LATITUDE'])
+	locationslongitude = np.asarray(locations['LONGITUDE'])
+	lat_min = min(locationslatitude)
+	lat_max = max(locationslatitude)
+	lon_min = min(locationslongitude)
+	lon_max = max(locationslongitude)
 	for p in predictors:
 		for regressor_model,linearpredictions,actualspeciescount,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,ransacpredictions,ransac_model in zip(p['model'],p["Linearpredictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['ransacpredictions'],p['ransac_model']):
 			plt.figure()
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in TestDataforplotting]
-			seasontraindatapredictions=regressor_model.predict(TrainData)     #To plot the predictor line for seasonal train data
-			seasontraindataransacpredictions=ransac_model.predict(TrainData)
-			NonSeasonalData = [dt.datetime.strptime(d,'%Y/%m').date() for d in NonSeasonalData]
+			seasontraindatapredictions=regressor_model.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using Linear regression model
+			seasontraindataransacpredictions=ransac_model.predict(TrainData)  # Predicting the frequency for the Seasonal Train Data using Robust regression model
+			inlier_mask = ransac_model.inlier_mask_                           
+			outlier_mask = np.logical_not(inlier_mask)                       
+			seasonalinliers=SeasonTrainData[inlier_mask]						#Finding inliers				
+			sesonaloutliermask=SeasonTrainData[outlier_mask]					#Finding outliers
+			NonSeasonalData = [dt.datetime.strptime(d,'%Y/%m').date() for d in NonSeasonalData]   #Converting the integer monthvalues into year/month format for plotting
 			SeasonTrainData = [dt.datetime.strptime(d,'%Y/%m').date() for d in SeasonTrainData]
+			seasonalinliers = [dt.datetime.strptime(d,'%Y/%m').date() for d in seasonalinliers]
+			sesonaloutliermask = [dt.datetime.strptime(d,'%Y/%m').date() for d in sesonaloutliermask]
 			lat=np.unique(latitude)
 			lon=np.unique(longitude)
 			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m'))
-			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3)                      #Scatter plot of Non-Seasonal-Data over Training years
-			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency)                                #Scatterplot of Seasonal Train Data
+			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
+			plt.plot(seasonalinliers,SeasonTrainDataFrequency[inlier_mask],'.g', label='Inliers') 			#Scatterplot of Seasonal inlier Train Data 
+			plt.plot(sesonaloutliermask,SeasonTrainDataFrequency[outlier_mask],'.r', label='Outliers')		#Scatterplot of Seasonal outliers in the Train Data
 			plt.gcf().autofmt_xdate()
-			plt.scatter(TestDataforplotting,actualspeciescount,color='black')                    #Scatter plot of Test Data with Actual Frequencies
-			plt.plot(TestDataforplotting,linearpredictions,'r-',linewidth=3)                     #Plotting predictor line for Test Data
-			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=3)  #plotting predictor line for sesonal train data
-			plt.plot(TestDataforplotting,ransacpredictions,'b-')
-			plt.plot(SeasonTrainData,seasontraindataransacpredictions,'b-')
-			plt.title(str(SPECIES)+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season))
-			#plt.legend()
+			plt.scatter(TestDataforplotting,actualspeciescount,color='black',label='Test Data')              #Scatter plot of Test Data with Actual Frequencies
+			plt.plot(TestDataforplotting,linearpredictions,'r-',linewidth=2,label='Linear Regressor Line')   #Plotting linear Regressor for Test Data
+			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=2)  #plotting predictor line for sesonal train data
+			plt.plot(TestDataforplotting,ransacpredictions,'b-',label='Robust Regressor Line',linewidth=2)  #Plotting Robust Regressor line for Test Data
+			plt.plot(SeasonTrainData,seasontraindataransacpredictions,'b-',linewidth=2)
+			plt.title(str(SPECIES)+"-"+str(predicting_year)+"-"+str(season))
+			plt.legend()
+			x1,x2,y1,y2=plt.axis()
+			plt.axis((x1,x2,0,y2))
+			insetfig= plt.axes([0.15,0.7,0.2,0.2])															#Setting coordinates and width,height of inset 
+			plt.title("Gridsquare Location")
+			themap= Basemap(projection = 'merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
+			#themap = Basemap(llcrnrlon=-126, llcrnrlat=22, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
+			themap.bluemarble()
+			themap.drawcoastlines()
+			themap.drawcountries(linewidth=2)
+			themap.drawstates()
+			themap.fillcontinents(color = 'gainsboro')
+			themap.drawmapboundary(fill_color='steelblue')
+			longg,latt=lon,lat
+			x, y = themap(longg,latt)
+			lonpoint, latpoint = themap(x,y,inverse=True)       
+			themap.plot(x,y,'ro',markersize=8)
+			plt.text(x+100000,y+100000,'Grid(%5.1fW,%3.1fN)'% (lonpoint,latpoint))
+			plt.xticks([])
+			plt.yticks([])
 			#plt.show()
 			plt.savefig(str(SPECIES)+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png")
 			plt.close()

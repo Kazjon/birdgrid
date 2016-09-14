@@ -40,7 +40,7 @@ for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
 	predictors.append(model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR))
 	
-plot_birds_over_time(predictors,SPECIES)
+plot_birds_over_time(predictors,SPECIES,locations)
 
 		
 plot_predictors(predictors,max_size=100, out_fname ='predictor_plot')
