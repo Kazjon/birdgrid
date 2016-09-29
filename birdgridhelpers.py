@@ -206,16 +206,11 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				residual_threshold=np.median([abs(x - np.median(TrainData_Target)) for x in TrainData_Target])
 				try:
 					model_name='Ransac_RobustRegression'
-					min_samples=round(0.8*len(TrainData))
+					min_samples=round(0.9*len(TrainData))
 					regr = linear_model.RANSACRegressor(linear_model.LinearRegression(),min_samples,residual_threshold)
 					regr.fit(TrainData,TrainData_Target)
-					#inlier_mask = model_ransac.inlier_mask_
-					#outlier_mask = np.logical_not(inlier_mask)
 					Predicted_Species_Count=regr.predict(TestData)
-					#Ransacpredictions.append(Predicted_Species_Count_ransac)
-					#Ransac_model.append(regr)
 				
-				#if residual_threshold == 0.0:
 				except ValueError:
 					model_name='Linear_Regression'
 					regr = linear_model.LinearRegression()
@@ -264,7 +259,6 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	d['seasonwisetraindata']=SeasonwiseTrainData
 	d['seasonwisetrainDatafrequency']=SeasonwiseTrainDataFrequency
 	d['traindata']=train
-	#d['ransacpredictions']=Ransacpredictions
 	d['Model_object']=ModelObject
 	d['Nonseasonaldata-timeframe']=Nonseasonaldata_timeframe
 	d['Model_Name']=Model_Name
@@ -282,35 +276,38 @@ def plot_birds_over_time(predictors,SPECIES,locations):
 			plt.figure()
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y/%m').date() for d in TestDataforplotting]
 			NonSeasonalData = [dt.datetime.strptime(d,'%Y/%m').date() for d in NonSeasonalData]   #Converting the integer monthvalues into year/month format for plotting
-			SeasonTrainData = [dt.datetime.strptime(d,'%Y/%m').date() for d in SeasonTrainData]
+			
 			lat=np.unique(latitude)
 			lon=np.unique(longitude)
 			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y/%m'))
 			plt.gcf().autofmt_xdate()
+			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
 			if Model_Name=='Linear_Regression':
+				SeasonTrainData = [dt.datetime.strptime(d,'%Y/%m').date() for d in SeasonTrainData]
 				seasontraindatapredictions=Model_Object.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using Linear regression model
-				Nonseasonaldatapredictions=Model_Object.predict(Nonseasonaldatamonths)
-				plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
+				#Nonseasonaldatapredictions=Model_Object.predict(Nonseasonaldatamonths)
 				plt.scatter(SeasonTrainData,SeasonTrainDataFrequency,label='Train Datapoints')
 				plt.scatter(TestDataforplotting,Actualspecies_count,color='black',label='Test Data')              #Scatter plot of Test Data with Actual Frequencies
 				plt.plot(TestDataforplotting,Predictions,'r-',linewidth=1,label='Linear Regressor Line')   #Plotting linear Regressor for Test Data
 				plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data
-				plt.plot(NonSeasonalData,Nonseasonaldatapredictions,'r-',linewidth=1)
+				#plt.plot(NonSeasonalData,Nonseasonaldatapredictions,'r-',linewidth=1)
 			
 			elif Model_Name=='Ransac_RobustRegression':
-				seasontraindataransacpredictions=Model_Object.predict(TrainData)  # Predicting the frequency for the Seasonal Train Data using Robust regression model
-				Nonseasonal_ransacpredictions=Model_Object.predict(Nonseasonaldatamonths)
+				seasontraindata_ransacpredictions=Model_Object.predict(TrainData)  # Predicting the frequency for the Seasonal Train Data using Robust regression model
+				#Nonseasonal_ransacpredictions=Model_Object.predict(Nonseasonaldatamonths)
 				inlier_mask = Model_Object.inlier_mask_                           
 				outlier_mask = np.logical_not(inlier_mask)                       
 				seasonalinliers=SeasonTrainData[inlier_mask]						#Finding inliers				
 				sesonaloutliermask=SeasonTrainData[outlier_mask]					#Finding outliers
 				seasonalinliers = [dt.datetime.strptime(d,'%Y/%m').date() for d in seasonalinliers]
 				sesonaloutliermask = [dt.datetime.strptime(d,'%Y/%m').date() for d in sesonaloutliermask]
+				SeasonTrainData = [dt.datetime.strptime(d,'%Y/%m').date() for d in SeasonTrainData]
 				plt.plot(seasonalinliers,SeasonTrainDataFrequency[inlier_mask],'.g', label='Inliers',ms=10) 			#Scatterplot of Seasonal inlier Train Data 
 				plt.plot(sesonaloutliermask,SeasonTrainDataFrequency[outlier_mask],'.r', label='Outliers',ms=10)		#Scatterplot of Seasonal outliers in the Train Data
 				plt.plot(TestDataforplotting,Predictions,'b-',label='Robust Regressor Line',linewidth=2)  #Plotting Robust Regressor line for Test Data
-				plt.plot(SeasonTrainData,seasontraindataransacpredictions,'b-',linewidth=2)
-				plt.plot(NonSeasonalData,Nonseasonal_ransacpredictions,'b-',linewidth=2)
+				plt.plot(SeasonTrainData,seasontraindata_ransacpredictions,'b-',linewidth=2)
+				plt.scatter(TestDataforplotting,Actualspecies_count,color='black',label='Test Data')
+				#plt.plot(NonSeasonalData,Nonseasonal_ransacpredictions,'b-',linewidth=2)
 				
 			plt.title("Species Name -"+str(SPECIES[0])+"-"+str(predicting_year)+"-"+str(season))
 			plt.legend(fontsize ='x-small',labelspacing=0.2)
@@ -318,7 +315,7 @@ def plot_birds_over_time(predictors,SPECIES,locations):
 			plt.ylabel("Predicted frequency values of the species")
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
-			insetfig= plt.axes([0.15,0.7,0.2,0.2])															#Setting coordinates and width,height of inset 
+			insetfig= plt.axes([0.15,0.6,0.2,0.2])															#Setting coordinates and width,height of inset 
 			themap= Basemap(projection = 'merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
 			#themap = Basemap(llcrnrlon=-126, llcrnrlat=22, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 			themap.bluemarble()
