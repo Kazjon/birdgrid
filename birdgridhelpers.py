@@ -49,6 +49,7 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR):
 	GridSquare=[]
 	df=pd.DataFrame([])
 	nw=pd.DataFrame([])
+	
 	if TIME_STEP =='monthly':
 		for i in range(lat_min,lat_max,GRID_SIZE):
 			for j in range(lon_min,lon_max,GRID_SIZE):
@@ -64,7 +65,9 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR):
 				obs['timeframe']=monthnumber
 				nw=nw.append(obs)
 				monthnumber += 1
-	nw.to_pickle('locations.p') 
+	nw=nw.reset_index()
+	nw['Date_Format']=pd.Series("/".join(a) for a in zip(nw.YEAR.astype("int").astype(str),nw.MONTH.astype("int").astype(str)))
+	nw.to_pickle('locations1.p') 
 	return nw
 
 #Plot the actual species frequency (from the data) on a map
@@ -112,26 +115,11 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR,S
 			plt.savefig(str(SPECIES[0])+"-"+str(year)+"-"+str(season)+".png")
 			plt.close()
 	return
-'''
+
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
 #Uses the location's included coordinates to provide a map insert showing a dot for the location on the US map (this should use matplotlib's "axes" interface as with here http://matplotlib.org/examples/pylab_examples/axes_demo.html)
 #The optional "predictor" object overlays the expectations of a particular predictor (which is associated with a particular timestamp)
-def plot_birds_over_time(location,SPECIES):
-	fig=plt.figure()
-	Gridpoint_Data=location
-	Gridpoint_Data['Date']=Gridpoint_Data.MONTH.astype(str).str.cat(Gridpoint_Data.YEAR.astype(str),sep='/')
-	lat=np.unique(Gridpoint_Data['LATITUDE'])
-	lon=np.unique(Gridpoint_Data['LONGITUDE'])
-	Timestamp=Gridpoint_Data['Date']
-	Species_Frequency=Gridpoint_Data[SPECIES]
-	Timestamp = [dt.datetime.strptime(d,'%m/%Y').date() for d in Timestamp]
-	plt.title(str(lat)+"-"+str(lon))
-	plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%m/%Y'))
-	plt.plot_date(x=Timestamp,y=Species_Frequency)
-	plt.gcf().autofmt_xdate()
-	plt.savefig(str(lat)+"-"+str(lon)+".png")
-	return
-'''
+
 def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR):
 	ModelObject=[]
 	Maximum_Error=[]
@@ -167,7 +155,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			NonSeasonalData=NonSeasonalData.append(NonSeasonal_Data[NonSeasonal_Data['YEAR']==predicting_year],ignore_index=True)
 			NonSeasonalDataTimeframe=NonSeasonalData['timeframe']
 			NonSeasonalDataTimeframe=NonSeasonalDataTimeframe.reshape(-1,1)
-			NonSeasonalDataforPlotting = NonSeasonalData.YEAR.astype(str).str.cat(NonSeasonalData.MONTH.astype(str),sep='/')
+			NonSeasonalDataforPlotting = NonSeasonalData['Date_Format']
 			NonSeasonalDataFrequency=NonSeasonalData[SPECIES[0]]
 			Seasonal_Data=LocationData[LocationData['MONTH'].isin(wanted)]
 			Train_Data=Seasonal_Data[Seasonal_Data['YEAR'].isin(Training_years)]
@@ -181,13 +169,13 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 				
 			TrainData=Train_Data['timeframe']
 			TrainData=TrainData.reshape(-1,1)
-			Seasonwise_TrainData=Train_Data.YEAR.astype(str).str.cat(Train_Data.MONTH.astype(str),sep='/')
+			Seasonwise_TrainData=Train_Data['Date_Format']
 			Seasonwise_Traindata_Frequency=Train_Data[SPECIES[0]]
 			TrainData_Target = Seasonwise_Traindata_Frequency.as_matrix()
 			TrainData_Target=TrainData_Target.astype(np.float)
 			TestData=Test_Data['timeframe']
 			TestData=TestData.reshape(-1,1)
-			TestData_Plotting=Test_Data.YEAR.astype(str).str.cat(Test_Data.MONTH.astype(str),sep='/')
+			TestData_Plotting=Test_Data['Date_Format']
 			Actual_Species_Count=Test_Data[SPECIES[0]]
 			lat=Test_Data['LATITUDE']
 			lon=Test_Data['LONGITUDE']
@@ -261,8 +249,8 @@ def plot_birds_over_time(predictors,SPECIES,locations):
 	lat_max = max(locationslatitude)
 	lon_min = min(locationslongitude)
 	lon_max = max(locationslongitude)
-	os.mkdir('RobustRegressionPlots')
-	destination_dir=os.path.abspath('RobustRegressionPlots')
+	os.mkdir('RobustRegressionPlots-Gridsize5')
+	destination_dir=os.path.abspath('RobustRegressionPlots-Gridsize5')
 	for p in predictors:
 		for Model_Name,Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths in zip(p["Model_Name"],p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe']):
 			plt.figure()
