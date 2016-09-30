@@ -1,5 +1,5 @@
 import numpy as np
-from birdgridhelpers import load_observations,init_birdgrid,model_location_novelty_over_time,plot_birds_over_time
+from birdgridhelpers import load_observations,init_birdgrid,plot_observation_frequency,model_location_novelty_over_time,plot_birds_over_time
 import numpy as np
 import glob
 import math
