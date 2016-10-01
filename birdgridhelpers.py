@@ -38,7 +38,7 @@ def load_observations(ATTRIBUTES, SPECIES, START_YEAR, END_YEAR):
 #Returns an array of dicts, each dict represents one location and contains lat, lon and data for each timestep
 #Returns a dataframe of attributes that are divided into grids, where as each grid square represents the total count of the species found in that location
 
-def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR):
+def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR,PICKLE_NAME):
 	lats=observations['LATITUDE']
 	lons=observations['LONGITUDE']
 	observations=observations.convert_objects(convert_numeric=True)
@@ -67,7 +67,7 @@ def init_birdgrid(observations,GRID_SIZE,SPECIES,TIME_STEP,START_YEAR,END_YEAR):
 				monthnumber += 1
 	nw=nw.reset_index()
 	nw['Date_Format']=pd.Series("/".join(a) for a in zip(nw.YEAR.astype("int").astype(str),nw.MONTH.astype("int").astype(str)))
-	nw.to_pickle('locations1.p') 
+	nw.to_pickle(PICKLE_NAME+".p") 
 	return nw
 
 #Plot the actual species frequency (from the data) on a map
@@ -119,6 +119,7 @@ def plot_observation_frequency(locations,SEASONS,GRID_SIZE,START_YEAR,END_YEAR,S
 #Plots the frequency (Y axis) against the timesteps (X axis) for the given location.
 #Uses the location's included coordinates to provide a map insert showing a dot for the location on the US map (this should use matplotlib's "axes" interface as with here http://matplotlib.org/examples/pylab_examples/axes_demo.html)
 #The optional "predictor" object overlays the expectations of a particular predictor (which is associated with a particular timestamp)
+
 
 def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEAR):
 	ModelObject=[]
@@ -242,15 +243,13 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 	return d
 
 
-def plot_birds_over_time(predictors,SPECIES,locations):	
+def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME):	
 	locationslatitude = np.asarray(locations['LATITUDE'])
 	locationslongitude = np.asarray(locations['LONGITUDE'])
 	lat_min = min(locationslatitude)
 	lat_max = max(locationslatitude)
 	lon_min = min(locationslongitude)
 	lon_max = max(locationslongitude)
-	os.mkdir('RobustRegressionPlots-Gridsize5')
-	destination_dir=os.path.abspath('RobustRegressionPlots-Gridsize5')
 	for p in predictors:
 		for Model_Name,Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths in zip(p["Model_Name"],p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe']):
 			plt.figure()
@@ -316,6 +315,9 @@ def plot_birds_over_time(predictors,SPECIES,locations):
 			plt.yticks([])
 			#plt.show()
 			figure_name=str(SPECIES[0])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+".png"
+			if not os.path.isdir(DIRECTORY_NAME):
+				os.mkdir(DIRECTORY_NAME)
+			destination_dir=os.path.abspath(DIRECTORY_NAME)
 			plt.savefig(os.path.join(destination_dir,figure_name))
 			plt.close()
 	return
