@@ -153,7 +153,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,START_YEAR,END_YEA
 			wanted=SEASONS[season]
 			NonSeasonal_Data=(LocationData.loc[~LocationData['MONTH'].isin(wanted)])
 			NonSeasonalData=(NonSeasonal_Data.loc[NonSeasonal_Data['YEAR'].isin(Training_years)])
-			NonSeasonalData=NonSeasonalData.append(NonSeasonal_Data[NonSeasonal_Data['YEAR']==predicting_year],ignore_index=True)
+			#NonSeasonalData=NonSeasonalData.append(NonSeasonal_Data[NonSeasonal_Data['YEAR']==predicting_year],ignore_index=True)
 			NonSeasonalDataTimeframe=NonSeasonalData['timeframe']
 			NonSeasonalDataTimeframe=NonSeasonalDataTimeframe.reshape(-1,1)
 			NonSeasonalDataforPlotting = NonSeasonalData['Date_Format']
