@@ -99,10 +99,10 @@ def plot_observation_frequency(locations,SEASONS,SPECIES,config):
 			lons = np.asarray(Seasonal_Data['LONGITUDE'])
 			Species_count=np.asarray(Seasonal_Data[SPECIES[0]])
 			Species_count=np.reshape(Species_count,len(Species_count))
-			lat_min = min(latitude)
-			lat_max = max(latitude)
-			lon_min = min(longitude)
-			lon_max = max(longitude)
+			lat_min = min(lats)
+			lat_max = max(lats)
+			lon_min = min(lons)
+			lon_max = max(lons)
 			spatial_resolution = 1 
 			fig = plt.figure()
 			x = np.array(lons)
@@ -297,7 +297,7 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			plt.ylabel(YAxis_Label)
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
-			insetfig= plt.axes([1,1,0.2,0.2])															#Setting coordinates and width,height of inset 
+			insetfig= plt.axes([0.6,0.7,0.2,0.2])															#Setting coordinates and width,height of inset 
 			themap= Basemap(projection = 'merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
 			#themap = Basemap(llcrnrlon=-126, llcrnrlat=22, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 			themap.bluemarble()
@@ -309,7 +309,7 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			longg,latt=lon,lat
 			x, y = themap(longg,latt)
 			lonpoint, latpoint = themap(x,y,inverse=True)       
-			themap.plot(x,y,'ro',markersize=7)
+			themap.plot(x,y,'ro',markersize=6)
 			plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=10)
 			#plt.text(x+100000,y+100000,'Grid(%5.1fW,%3.1fN)'% (lonpoint,latpoint))
 			plt.xticks([])
