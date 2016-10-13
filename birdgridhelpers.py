@@ -15,6 +15,7 @@ import pickle
 from sklearn import linear_model
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 import matplotlib.dates as mdates
+from matplotlib.patches import Polygon
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
@@ -26,12 +27,15 @@ def load_observations(ATTRIBUTES,SPECIES,config):
 	list_ = []
 	for file_ in allFiles:
 		df = pd.read_csv(file_,index_col=None,header=0,usecols=ColumnNames)
-		df=df[(df['YEAR']>=config['START_YEAR'])&(df['YEAR']<=config['END_YEAR'])]
-		df=df.replace('X',1)
+		#df=df[(df['YEAR']>=config['START_YEAR'])&(df['YEAR']<=config['END_YEAR'])]
+		#df=df.replace('X',1)
 		#df=df[(df[SPECIES[0]]!='0')]
 		#df=df[(df[SPECIES[0]]!=0)]
 		list_.append(df)
 	observations= pd.concat(list_)
+	observations=observations[(observations['YEAR']>=config['START_YEAR'])&(observations['YEAR']<=config['END_YEAR'])]
+	observations=observations.replace('X',1) 
+	observations=observations.replace('?',0)
 	return observations
 
 #Takes in the matrix of observations and bins it into observations based on the provided grid size.
@@ -71,7 +75,7 @@ def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
 						counts[SPECIES[0]].append(float(np.sum(g[SPECIES[0]].values>0))/g.shape[0])
 					GridwiseCount = pd.DataFrame.from_dict(counts)
 				else:
-					GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[SPECIES[0]].sum()								
+					GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[SPECIES].sum()								
 				
 				df=df.append(GridwiseCount)
 		monthnumber=0
@@ -257,6 +261,7 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 	lat_max = max(locationslatitude)
 	lon_min = min(locationslongitude)
 	lon_max = max(locationslongitude)
+	print lat_min,lat_max,lon_min,lon_max
 	if config['use_chance_not_count']:
 		SeasonTrainData_Label="Sighting chance (months)"
 		TestData_Label="Sighting chance( )"
@@ -279,47 +284,55 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			AllData_frame = pd.DataFrame({"dates":[dt.datetime.strptime(d,'%Y-%m').date() for d in AllData],"freqs":AllDataFrequency}).sort_values("dates")
 			lat=np.unique(latitude)
 			lon=np.unique(longitude)
-			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))    
 			plt.gca().xaxis.set_minor_formatter(mdates.DateFormatter('%M'))
 			plt.gcf().autofmt_xdate()
 			#plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
 			SeasonTrainData = [dt.datetime.strptime(d,'%Y-%m').date() for d in SeasonTrainData]
+			#NonSeasonalData=[dt.datetime.strptime(d,'%Y-%m').date() for d in NonSeasonalData]
 			seasontraindatapredictions=Model_Object.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using regression model
-			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency,label=SeasonTrainData_Label)
+			#plt.scatter(SeasonTrainData,SeasonTrainDataFrequency,label=SeasonTrainData_Label)
 			plt.scatter(TestDataforplotting,Actualspecies_count,color='black',label=TestData_Label)              #Scatter plot of Test Data with Actual Frequencies
 			plt.plot(TestDataforplotting,Predictions,'r-',linewidth=1,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data		
-			plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"],linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)   	
+			plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"],linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
+			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
+			plt.plot(SeasonTrainData,SeasonTrainDataFrequency,'b-',linewidth=0.6,alpha=0.7,label='SeasonalData_Line')
 			plt.title(str(SPECIES[0])+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
-			plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
+			#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
 			plt.tight_layout(pad=7)
 			plt.xlabel("Time")
 			plt.ylabel(YAxis_Label)
+			plt.xticks(rotation='horizontal')
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
 			insetfig= plt.axes([0.6,0.7,0.2,0.2])															#Setting coordinates and width,height of inset 
-			themap= Basemap(projection = 'merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min, urcrnrlon=lon_max,rsphere=6371200., resolution='l', area_thresh=10000)
-			#themap = Basemap(llcrnrlon=-126, llcrnrlat=22, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
+			themap=Basemap(projection='merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min,urcrnrlon=lon_max,rsphere=6371200.,resolution='l',area_thresh=10000)
+			#themap = Basemap(llcrnrlon=-126, llcrnrlat=16, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
+			reclats=[lat,lat+config['GRID_SIZE'],lat+config['GRID_SIZE'],lat]   #Rectangular latitude coordinates for displaying grid in plot
+			reclons=[lon,lon,lon+config['GRID_SIZE'],lon+config['GRID_SIZE']]	#Rectangular longitude coordinates for displaying grid in plot
 			themap.bluemarble()
 			themap.drawcoastlines()
 			themap.drawcountries(linewidth=2)
 			themap.drawstates()
 			themap.fillcontinents(color='gainsboro')
 			themap.drawmapboundary(fill_color='steelblue')
+			x3,y3=themap(reclons,reclats)
+			x3y3=zip(x3,y3)
+			p= Polygon( x3y3, facecolor='red', alpha=0.4 )       #Plotting rectangular polygon grid in Basemap
+			plt.gca().add_patch(p)
 			longg,latt=lon,lat
 			x, y = themap(longg,latt)
 			lonpoint, latpoint = themap(x,y,inverse=True)       
-			themap.plot(x,y,'ro',markersize=6)
 			plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=10)
-			#plt.text(x+100000,y+100000,'Grid(%5.1fW,%3.1fN)'% (lonpoint,latpoint))
 			plt.xticks([])
 			plt.yticks([])
-			#plt.show()
 			figure_name=str(SPECIES[0])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']+".png"
 			if not os.path.isdir(DIRECTORY_NAME):
 				os.mkdir(DIRECTORY_NAME)
 			destination_dir=os.path.abspath(DIRECTORY_NAME)
 			plt.savefig(os.path.join(destination_dir,figure_name))
+			#plt.show()
 			plt.close()
 	return
 '''
