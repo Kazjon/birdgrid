@@ -283,17 +283,8 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 		
 	for p in predictors:
 		for Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths,TrainData_years,TrainData_months in zip(p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe'],p['TrainData_years'],p['TrainData_months']):
-			SeasonTrainData_indexvalues=SeasonTrainData.index.values
-			NonSeasonalData_indexvalues=NonSeasonalData.index.values
-			SeasonalTrainData_Color = pd.DataFrame()
-			NonSeasonalData_Color=pd.DataFrame()
 			plt.figure()
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y-%m').date() for d in TestDataforplotting]
-			#SeasonalTrainData_Color = pd.Series(['b' for x in range(len(SeasonTrainData.index))])
-			#SeasonalTrainData_Color=SeasonalTrainData_Color.reindex(SeasonTrainData_indexvalues,fill_value='b')
-			#NonSeasonalData_Color=pd.Series(['r' for x in range(len(NonSeasonalData.index))])
-			#NonSeasonalData_Color=NonSeasonalData_Color.reindex(NonSeasonalData_indexvalues,fill_value='r')
-			#AllDataColor=pd.concat([NonSeasonalData_Color,SeasonalTrainData_Color])
 			AllData = pd.concat([NonSeasonalData,SeasonTrainData])
 			AllDataFrequency = pd.concat([NonSeasonalDataFrequency,SeasonTrainDataFrequency])
 			AllDataSeasonal_frame=pd.DataFrame({"dates":[dt.datetime.strptime(d,'%Y-%m').date() for d in SeasonTrainData],"freqs":SeasonTrainDataFrequency,"years":TrainData_years,"season":season,"MONTH":TrainData_months}).sort_values("dates")
@@ -321,16 +312,42 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 				for year in year_values:
 					seasontraindata_winter=AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year)&(AllDataSeasonal_frame['MONTH']!=12)]
 					seasontraindata_winter=seasontraindata_winter.append(AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year-1)&(AllDataSeasonal_frame['MONTH']==12)],ignore_index=True)
+					seasontraindata_winter=seasontraindata_winter.sort(['years', 'MONTH'], ascending=[True,True])
+					yearslist=seasontraindata_winter.years.unique()
 					season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
 						plt.plot(x,y,color='blue')
+					
+					if len(seasontraindata_winter)>=2:
+						if year-1 in yearslist:
+							verticalarea_startdate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year-1)]['dates'])
+							area_startdate=verticalarea_startdate[0]
+							dft=seasontraindata_winter[(seasontraindata_winter['years']==year)]
+							if len(dft)==1:
+								verticalarea_enddate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)]['dates'])
+								area_enddate=verticalarea_enddate[0]
+							else:
+								verticalarea_enddate=np.asarray(dft[(dft['MONTH']==dft['MONTH'].max())]['dates'])
+								area_enddate=verticalarea_enddate[0]	
+						else:
+							verticalarea_startdate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)&(seasontraindata_winter['MONTH']==seasontraindata_winter['MONTH'].min())]['dates'])
+							area_startdate=verticalarea_startdate[0]	
+							verticalarea_enddate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)&(seasontraindata_winter['MONTH']==seasontraindata_winter['MONTH'].max())]['dates'])
+							area_enddate=verticalarea_enddate[0]
+						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=0)					
 			else:		
 				for name,group in grouped_seasonedTraindata:
 					season_array=np.asarray(group[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
 						plt.plot(x,y,color='blue')
+					if len(group) >=2:
+						verticalarea_startdate=np.asarray(group[(group['MONTH']==group['MONTH'].min())]['dates'])
+						area_startdate=verticalarea_startdate[0]
+						verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
+						area_enddate=verticalarea_enddate[0]
+						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=0)
 			plt.plot(TestDataforplotting,Predictions,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
@@ -368,8 +385,8 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			if not os.path.isdir(DIRECTORY_NAME):
 				os.mkdir(DIRECTORY_NAME)
 			destination_dir=os.path.abspath(DIRECTORY_NAME)
-			#plt.savefig(os.path.join(destination_dir,figure_name))
-			plt.show()
+			plt.savefig(os.path.join(destination_dir,figure_name))
+			#plt.show()
 			plt.close()
 	return
 '''
