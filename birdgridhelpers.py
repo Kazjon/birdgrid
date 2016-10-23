@@ -8,6 +8,7 @@ import datetime as dt
 from datetime import datetime
 from mpl_toolkits.basemap import Basemap
 from matplotlib.mlab import griddata
+from matplotlib.ticker import MultipleLocator
 from scipy import interpolate
 import csv
 import matplotlib.pyplot as plt
@@ -16,6 +17,7 @@ from sklearn import linear_model
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 import matplotlib.dates as mdates
 from matplotlib.patches import Polygon
+
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
@@ -33,7 +35,7 @@ def load_observations(ATTRIBUTES,SPECIES,config):
 		#df=df[(df[SPECIES[0]]!=0)]
 		list_.append(df)
 	observations= pd.concat(list_)
-	observations=observations[(observations['YEAR']>=config['START_YEAR'])&(observations['YEAR']<=config['END_YEAR'])]
+	observations=observations[(observations['YEAR']>=config['START_YEAR']-1)&(observations['YEAR']<=config['END_YEAR'])]
 	observations=observations.replace('X',1) 
 	observations=observations.replace('?',0)
 	return observations
@@ -79,7 +81,7 @@ def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
 				
 				df=df.append(GridwiseCount)
 		monthnumber=0
-		for year in range(config['START_YEAR'],config['END_YEAR']+1):
+		for year in range(config['START_YEAR']-1,config['END_YEAR']+1):
 			for month in range(1,13):
 				obs=df[(df['YEAR']==year)&(df['MONTH']==month)]
 				obs['timeframe']=monthnumber
@@ -184,12 +186,18 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,config):
 			Seasonal_Data=LocationData[LocationData['MONTH'].isin(wanted)]
 			Train_Data=Seasonal_Data[Seasonal_Data['YEAR'].isin(Training_years)]
 			max_train_year=max(Training_years)
+			min_train_year=min(Training_years)
+				
 			Test_Data=(Seasonal_Data.loc[Seasonal_Data['YEAR'].isin(predicting_year)])
-			if season =='winter':
+			if season =='WINTER':
 				Test_Data=Test_Data[(Test_Data['YEAR']==predicting_year)&(Test_Data['MONTH']!=12)]
 				Test_Data=Test_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']==12)], ignore_index=True)
 				tr=Train_Data[(Train_Data['YEAR']!=max_train_year)]
 				Train_Data=tr.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)],ignore_index=True)
+				Train_Data=Train_Data.append(Train_Data[(Train_Data['YEAR']==max_train_year)&(Train_Data['MONTH']!=12)],ignore_index=True)
+				if min_train_year >=2003:
+					Starting_yearData=LocationData[LocationData['MONTH'].isin(SEASONS['WINTER'])]
+					Train_Data=Train_Data.append(Starting_yearData[(Starting_yearData['YEAR']==min_train_year-1)&(Starting_yearData['MONTH']==12)],ignore_index=True)
 			TrainData_years=Train_Data['YEAR']	
 			TrainData_months=Train_Data['MONTH']
 			TrainData=Train_Data['timeframe']
@@ -283,7 +291,8 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 		
 	for p in predictors:
 		for Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths,TrainData_years,TrainData_months in zip(p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe'],p['TrainData_years'],p['TrainData_months']):
-			plt.figure()
+			plt.figure(figsize=(25,20))
+			#fig.set_size_inches(18.5, 10.5, forward=True)
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y-%m').date() for d in TestDataforplotting]
 			AllData = pd.concat([NonSeasonalData,SeasonTrainData])
 			AllDataFrequency = pd.concat([NonSeasonalDataFrequency,SeasonTrainDataFrequency])
@@ -295,8 +304,9 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			non_season_array=np.asarray(AllDataNonSeasonal_frame)
 			lat=np.unique(latitude)
 			lon=np.unique(longitude)
-			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))    
+			plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
 			plt.gca().xaxis.set_minor_formatter(mdates.DateFormatter('%M'))
+			plt.gca().xaxis.set_minor_locator(mdates.MonthLocator())
 			plt.gcf().autofmt_xdate()
 			SeasonTrainData = [dt.datetime.strptime(d,'%Y-%m').date() for d in SeasonTrainData]
 			NonSeasonalData=[dt.datetime.strptime(d,'%Y-%m').date() for d in NonSeasonalData]
@@ -307,12 +317,12 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			grouped_seasonedTraindata=AllDataSeasonal_frame.groupby('years')
 			plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"],linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
 			season_name=AllDataSeasonal_frame.season.unique()
-			if season_name=='winter':
+			if season_name=='WINTER':
 				year_values=AllDataSeasonal_frame.years.unique()
 				for year in year_values:
 					seasontraindata_winter=AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year)&(AllDataSeasonal_frame['MONTH']!=12)]
 					seasontraindata_winter=seasontraindata_winter.append(AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year-1)&(AllDataSeasonal_frame['MONTH']==12)],ignore_index=True)
-					seasontraindata_winter=seasontraindata_winter.sort(['years', 'MONTH'], ascending=[True,True])
+					seasontraindata_winter=seasontraindata_winter.sort(['years','MONTH'], ascending=[True,True])
 					yearslist=seasontraindata_winter.years.unique()
 					season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
@@ -335,7 +345,7 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 							area_startdate=verticalarea_startdate[0]	
 							verticalarea_enddate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)&(seasontraindata_winter['MONTH']==seasontraindata_winter['MONTH'].max())]['dates'])
 							area_enddate=verticalarea_enddate[0]
-						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=0)					
+						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)					
 			else:		
 				for name,group in grouped_seasonedTraindata:
 					season_array=np.asarray(group[['dates','freqs']])
@@ -347,30 +357,35 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 						area_startdate=verticalarea_startdate[0]
 						verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
 						area_enddate=verticalarea_enddate[0]
-						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=0)
+						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
 			plt.plot(TestDataforplotting,Predictions,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
 			#plt.plot(SeasonTrainData,SeasonTrainDataFrequency,'b-',linewidth=0.6,alpha=0.7,label='SeasonalData_Line')
 			plt.title(str(SPECIES[0])+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
 			#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
-			plt.tight_layout(pad=7)
+			plt.tight_layout(pad=20)
 			plt.xlabel("Time")
 			plt.ylabel(YAxis_Label)
 			plt.xticks(rotation='horizontal')
+			plt.setp(plt.gca().get_xminorticklabels(),visible=False)
+			#labels = [item.get_text() for item in plt.gca().get_xminorticklabels()]
+			#empty_string_labels = ['']*len(labels)
+			#plt.gca().set_xticklabels(empty_string_labels)
+			#plt.minorticks_off()
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
-			insetfig= plt.axes([0.6,0.7,0.2,0.2])															#Setting coordinates and width,height of inset 
+			insetfig= plt.axes([0.6,0.8,0.2,0.2])							#Setting coordinates and width,height of inset 
 			themap=Basemap(projection='merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min,urcrnrlon=lon_max,rsphere=6371200.,resolution='l',area_thresh=10000)
 			#themap = Basemap(llcrnrlon=-126, llcrnrlat=16, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 			reclats=[lat,lat+config['GRID_SIZE'],lat+config['GRID_SIZE'],lat]   #Rectangular latitude coordinates for displaying grid in plot
 			reclons=[lon,lon,lon+config['GRID_SIZE'],lon+config['GRID_SIZE']]	#Rectangular longitude coordinates for displaying grid in plot
-			themap.bluemarble()
+			#themap.bluemarble()
 			themap.drawcoastlines()
 			themap.drawcountries(linewidth=2)
 			themap.drawstates()
-			themap.fillcontinents(color='gainsboro')
-			themap.drawmapboundary(fill_color='steelblue')
+			#themap.fillcontinents(color='gainsboro')
+			#themap.drawmapboundary(fill_color='steelblue')
 			x3,y3=themap(reclons,reclats)
 			x3y3=zip(x3,y3)
 			p= Polygon(x3y3, facecolor='red', alpha=0.4)       #Plotting rectangular polygon grid in Basemap
