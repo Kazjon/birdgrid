@@ -14,6 +14,9 @@ import csv
 import matplotlib.pyplot as plt
 import pickle
 from sklearn import linear_model
+from sklearn.metrics import mean_absolute_error,explained_variance_score
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 import matplotlib.dates as mdates
 from matplotlib.patches import Polygon
@@ -87,6 +90,8 @@ def init_birdgrid(observations,config):
 				obs['timeframe']=monthnumber
 				nw=nw.append(obs)
 				monthnumber += 1
+	elif config["TIME_STEP"] == "weekly":
+		raise NotImplementedError
 	nw=nw.reset_index()
 	nw['Date_Format']=pd.Series("-".join(a) for a in zip(nw.YEAR.astype("int").astype(str),nw.MONTH.astype("int").astype(str)))
 	nw.to_pickle(config["RUN_NAME"]+".p")
@@ -147,6 +152,9 @@ def model_location_novelty_over_time(location,SEASONS,config):
 	ModelObject=[]
 	Maximum_Error=[]
 	Mean_Error=[]
+	Model_Name=[]
+	mean_abs_errors = []
+	explained_var = []
 	Regression_Coefficient=[]
 	Regression_Intercepts=[]
 	Regression_Score=[]
@@ -220,12 +228,18 @@ def model_location_novelty_over_time(location,SEASONS,config):
 					regr = linear_model.TheilSenRegressor()
 				regr.fit(TrainData,TrainData_Target)
 				Predicted_Species_Count=regr.predict(TestData)
-				#MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
-				#Maximum_Error.append(MaxError)				
-				#MeanError=np.mean((regr.predict(TestData) - Actual_Species_Count) ** 2)
-				#Mean_Error.append(MeanError)
-				#Score=regr.score(TestData,Actual_Species_Count)
-				#Regression_Score.append(Score)
+				MaxError=np.max(abs(Predicted_Species_Count-Actual_Species_Count))
+				Maximum_Error.append(MaxError)
+				MeanError=np.mean((Predicted_Species_Count - Actual_Species_Count) ** 2)
+				Mean_Error.append(MeanError)
+				r2_test=regr.score(TestData,Actual_Species_Count)
+				r2_train=regr.score(TrainData,TrainData_Target)
+				mae_test = mean_absolute_error(Actual_Species_Count,Predicted_Species_Count)
+				mae_train = mean_absolute_error(TrainData_Target,regr.predict(TrainData))
+				e_v = explained_variance_score(TrainData_Target,regr.predict(TrainData))
+				explained_var.append(e_v)
+				Regression_Score.append((r2_train,r2_test))
+				mean_abs_errors.append((mae_train,mae_test))
 				ActualSpeciesCount.append(Actual_Species_Count)
 				TestDataforplotting.append(TestData_Plotting)
 				seasonlist.append(season)
@@ -246,12 +260,14 @@ def model_location_novelty_over_time(location,SEASONS,config):
 				continue
 			
 	d['location']={}
-	#d['stats']={}
+	d['stats']={}
 	d['location']['latitude']=latitude
 	d['location']['longitude']=longitude
-	#d['stats']['score']=Regression_Score
-	#d['stats']['max_error']=np.reshape(Maximum_Error, len(Maximum_Error))
-	#d['stats']['mean_error']=np.reshape(Mean_Error, len(Mean_Error))
+	d['stats']['score']=Regression_Score
+	d['stats']['max_error']=np.reshape(Maximum_Error, len(Maximum_Error))
+	d['stats']['mean_error']=np.reshape(Mean_Error, len(Mean_Error))
+	d["stats"]["mean_abs_errors"] = mean_abs_errors
+	d["stats"]["expvar"] = explained_var
 	d['predictions']=Predictions
 	d['actualspeciescount']=ActualSpeciesCount
 	d['TestDataforplotting']=TestDataforplotting
@@ -290,7 +306,7 @@ def plot_birds_over_time(predictors,locations,config):
 		YAxis_Label="Number of sightings"
 		
 	for p in predictors:
-		for Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths,TrainData_years,TrainData_months in zip(p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe'],p['TrainData_years'],p['TrainData_months']):
+		for Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths,TrainData_years,TrainData_months,mean_abs_errors in zip(p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe'],p['TrainData_years'],p['TrainData_months'],p["stats"]["mean_abs_errors"]):
 			plt.figure(figsize=(25,20))
 			#fig.set_size_inches(18.5, 10.5, forward=True)
 			TestDataforplotting = [dt.datetime.strptime(d,'%Y-%m').date() for d in TestDataforplotting]
@@ -362,7 +378,7 @@ def plot_birds_over_time(predictors,locations,config):
 			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
 			#plt.plot(SeasonTrainData,SeasonTrainDataFrequency,'b-',linewidth=0.6,alpha=0.7,label='SeasonalData_Line')
-			plt.title(str(SPECIES[0])+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
+			plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
 			#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
 			plt.tight_layout(pad=20)
 			plt.xlabel("Time")
@@ -376,7 +392,7 @@ def plot_birds_over_time(predictors,locations,config):
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
 			insetfig= plt.axes([0.6,0.8,0.2,0.2])							#Setting coordinates and width,height of inset 
-			themap=Basemap(projection='merc',llcrnrlat=lat_min,urcrnrlat=lat_max,llcrnrlon=lon_min,urcrnrlon=lon_max,rsphere=6371200.,resolution='l',area_thresh=10000)
+			themap=Basemap(projection='merc',llcrnrlat=lat_min-config['GRID_SIZE'],urcrnrlat=lat_max,llcrnrlon=lon_min-config['GRID_SIZE'],urcrnrlon=lon_max,rsphere=6371200.,resolution='l',area_thresh=10000)
 			#themap = Basemap(llcrnrlon=-126, llcrnrlat=16, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 			reclats=[lat,lat+config['GRID_SIZE'],lat+config['GRID_SIZE'],lat]   #Rectangular latitude coordinates for displaying grid in plot
 			reclons=[lon,lon,lon+config['GRID_SIZE'],lon+config['GRID_SIZE']]	#Rectangular longitude coordinates for displaying grid in plot
@@ -403,23 +419,36 @@ def plot_birds_over_time(predictors,locations,config):
 			plt.savefig(os.path.join(destination_dir,figure_name))
 			#plt.show()
 			plt.close()
-	return
 
-def plot_predictors(predictors,max_size,out_fname):
+def plot_predictors(predictors,config, max_size,out_fname, minlimit = -100):
 	predictor_coefs = []
 	predictor_intercepts = []
 	predictor_variance = []
+	predictor_surprise = []
+	predictor_train_maes = []
+	predictor_test_maes = []
+	predictor_names = []
+	predictor_expvar = []
 	for p in predictors:
-		for model,score in zip(p["model"],p["stats"]["score"]):
-			predictor_coefs.append(model.coef_)
-			predictor_intercepts.append(model.intercept_)
-			predictor_variance.append(score)
+		for model,score,errors,season,predicting_year,lat,long,expvar in zip(p["Model_object"],p["stats"]["score"],p["stats"]["mean_abs_errors"],p["seasonlist"],p["predictingyearlist"],p["location"]["latitude"],p["location"]["longitude"],p["stats"]["expvar"]):
+			if predicting_year >= config['PREDICTION_START_YEAR']:
+				predictor_coefs.append(model.coef_[0])
+				predictor_intercepts.append(model.intercept_)
+				predictor_expvar.append(expvar)
+				predictor_variance.append(score[0])
+				predictor_surprise.append(score[1])
+				predictor_train_maes.append(errors[0])
+				predictor_test_maes.append(errors[1])
+				predictor_names.append(str(lat.values[0])+"_"+str(long.values[0])+"_"+str(predicting_year)+"_"+str(season))
+	pred_df = pd.DataFrame({"name":predictor_names,"coef":predictor_coefs,"intercept":predictor_intercepts,"train_maes":predictor_train_maes,"test_maes":predictor_test_maes,"expvar":predictor_expvar,"test/train_mae":[tr/te for tr,te in zip(predictor_test_maes,predictor_train_maes)]}) #"r2_train":predictor_variance,"r2_test":predictor_surprise,
+	pd.set_option('expand_frame_repr', False)
+	print pred_df
+	sorted_pred_df = pred_df.sort_values("test/train_mae")
+	print sorted_pred_df
 	plt.figure(figsize=(10,10))
-	variance=predictor_variance
-	plt.scatter(predictor_coefs,predictor_intercepts)
-	plt.xlabel("Regression coefficient")
-	plt.ylabel("Regression intercept")
+	plt.scatter(predictor_train_maes,predictor_test_maes)
+	plt.xlabel("Train MAE")
+	plt.ylabel("Test MAE")
 	#plt.show()
-	plt.savefig(str(out_fname)+".png")
+	plt.savefig(str(out_fname)+"variance_by_surprise.png")
 	plt.close()
-	return
