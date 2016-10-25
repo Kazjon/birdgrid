@@ -21,11 +21,11 @@ from matplotlib.patches import Polygon
 
 #Takes in a set of desired attributes, the species, and the year range
 #returns an observation x [lat, lon, season, attribute_1, attribute_2,...attribute_n] matrix 
-def load_observations(ATTRIBUTES,SPECIES,config):
+def load_observations(config):
 	path = os.path.normpath('Birdgriddata') 
 	allFiles = glob.glob(path + "/*.csv")
 	observations = pd.DataFrame()
-	ColumnNames=np.append(ATTRIBUTES,SPECIES)
+	ColumnNames=np.append(config["ATTRIBUTES"],config['SPECIES'])
 	list_ = []
 	for file_ in allFiles:
 		df = pd.read_csv(file_,index_col=None,header=0,usecols=ColumnNames)
@@ -44,7 +44,7 @@ def load_observations(ATTRIBUTES,SPECIES,config):
 #Returns an array of dicts, each dict represents one location and contains lat, lon and data for each timestep
 #Returns a dataframe of attributes that are divided into grids, where as each grid square represents the total count of the species found in that location
 
-def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
+def init_birdgrid(observations,config):
 	lats=observations['LATITUDE']
 	lons=observations['LONGITUDE']
 	observations=observations.convert_objects(convert_numeric=True)
@@ -56,7 +56,7 @@ def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
 	df=pd.DataFrame([])
 	nw=pd.DataFrame([])
 	
-	if TIME_STEP =='monthly':
+	if config["TIME_STEP"] =='monthly':
 		for i in range(lat_min,lat_max,config['GRID_SIZE']):
 			for j in range(lon_min,lon_max,config['GRID_SIZE']):
 				GridSquare=observations[(observations['LATITUDE']>=i)&(observations['LATITUDE']<i+config['GRID_SIZE'])&(observations['LONGITUDE']>=j)&(observations['LONGITUDE']<j+config['GRID_SIZE'])]
@@ -68,16 +68,16 @@ def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
 					counts['LONGITUDE'] =[]
 					counts['YEAR']=[]
 					counts['MONTH']=[]
-					counts[SPECIES[0]]=[]
+					counts[config['SPECIES']]=[]
 					for (lat,lon,y,m),g in GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False):
 						counts['LATITUDE'].append(lat)
 						counts['LONGITUDE'].append(lon)
 						counts['YEAR'].append(y)
 						counts['MONTH'].append(m)
-						counts[SPECIES[0]].append(float(np.sum(g[SPECIES[0]].values>0))/g.shape[0])
+						counts[config['SPECIES']].append(float(np.sum(g[config['SPECIES']].values>0))/g.shape[0])
 					GridwiseCount = pd.DataFrame.from_dict(counts)
 				else:
-					GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[SPECIES].sum()								
+					GridwiseCount=GridSquare.groupby(['LATITUDE','LONGITUDE','YEAR','MONTH'],as_index=False)[config['SPECIES']].sum()
 				
 				df=df.append(GridwiseCount)
 		monthnumber=0
@@ -89,11 +89,11 @@ def init_birdgrid(observations,SPECIES,TIME_STEP,PICKLE_NAME,config):
 				monthnumber += 1
 	nw=nw.reset_index()
 	nw['Date_Format']=pd.Series("-".join(a) for a in zip(nw.YEAR.astype("int").astype(str),nw.MONTH.astype("int").astype(str)))
-	nw.to_pickle(PICKLE_NAME+".p") 
+	nw.to_pickle(config["RUN_NAME"]+".p")
 	return nw
 
 #Plot the actual species frequency (from the data) on a map
-def plot_observation_frequency(locations,SEASONS,SPECIES,config):
+def plot_observation_frequency(locations,SEASONS,config):
 	for year in range(config['START_YEAR'],config['END_YEAR']+1):
 		for season in SEASONS:
 			wanted=SEASONS[season]
@@ -103,7 +103,7 @@ def plot_observation_frequency(locations,SEASONS,SPECIES,config):
 			Seasonal_Data=(Yearly_Data.loc[Yearly_Data['MONTH'].isin(wanted)])
 			lats = np.asarray(Seasonal_Data['LATITUDE'])
 			lons = np.asarray(Seasonal_Data['LONGITUDE'])
-			Species_count=np.asarray(Seasonal_Data[SPECIES[0]])
+			Species_count=np.asarray(Seasonal_Data[config['SPECIES']])
 			Species_count=np.reshape(Species_count,len(Species_count))
 			lat_min = min(lats)
 			lat_max = max(lats)
@@ -132,9 +132,9 @@ def plot_observation_frequency(locations,SEASONS,SPECIES,config):
 			levels=np.linspace(0,z.max(),25)
 			cm=plt.contourf(x, y, zi,levels=levels,cmap=plt.cm.Greys)
 			plt.colorbar()
-			plt.title(str(SPECIES[0])+"-"+str(year)+"-"+str(season))
+			plt.title(config['SPECIES']+"-"+str(year)+"-"+str(season))
 			#plt.show()
-			plt.savefig(str(SPECIES[0])+"-"+str(year)+"-"+str(season)+".png")
+			plt.savefig(config['SPECIES']+"-"+str(year)+"-"+str(season)+".png")
 			plt.close()
 	return
 
@@ -143,7 +143,7 @@ def plot_observation_frequency(locations,SEASONS,SPECIES,config):
 #The optional "predictor" object overlays the expectations of a particular predictor (which is associated with a particular timestamp)
 
 
-def model_location_novelty_over_time(location,SPECIES,SEASONS,config):
+def model_location_novelty_over_time(location,SEASONS,config):
 	ModelObject=[]
 	Maximum_Error=[]
 	Mean_Error=[]
@@ -182,7 +182,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,config):
 			NonSeasonalDataTimeframe=NonSeasonalData['timeframe']
 			NonSeasonalDataTimeframe=NonSeasonalDataTimeframe.reshape(-1,1)
 			NonSeasonalDataforPlotting = NonSeasonalData['Date_Format']
-			NonSeasonalDataFrequency=NonSeasonalData[SPECIES[0]]
+			NonSeasonalDataFrequency=NonSeasonalData[config['SPECIES']]
 			Seasonal_Data=LocationData[LocationData['MONTH'].isin(wanted)]
 			Train_Data=Seasonal_Data[Seasonal_Data['YEAR'].isin(Training_years)]
 			max_train_year=max(Training_years)
@@ -203,13 +203,13 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,config):
 			TrainData=Train_Data['timeframe']
 			TrainData=TrainData.reshape(-1,1)
 			Seasonwise_TrainData=Train_Data['Date_Format']
-			Seasonwise_Traindata_Frequency=Train_Data[SPECIES[0]]
+			Seasonwise_Traindata_Frequency=Train_Data[config['SPECIES']]
 			TrainData_Target = Seasonwise_Traindata_Frequency.as_matrix()
 			TrainData_Target=TrainData_Target.astype(np.float)
 			TestData=Test_Data['timeframe']
 			TestData=TestData.reshape(-1,1)
 			TestData_Plotting=Test_Data['Date_Format']
-			Actual_Species_Count=Test_Data[SPECIES[0]]
+			Actual_Species_Count=Test_Data[config['SPECIES']]
 			lat=Test_Data['LATITUDE']
 			lon=Test_Data['LONGITUDE']
 			
@@ -269,7 +269,7 @@ def model_location_novelty_over_time(location,SPECIES,SEASONS,config):
 	return d
 
 
-def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):	
+def plot_birds_over_time(predictors,locations,config):
 	locationslatitude = np.asarray(locations['LATITUDE'])
 	locationslongitude = np.asarray(locations['LONGITUDE'])
 	lat_min = min(locationslatitude)
@@ -396,15 +396,15 @@ def plot_birds_over_time(predictors,SPECIES,locations,DIRECTORY_NAME,config):
 			plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=10)
 			plt.xticks([])
 			plt.yticks([])
-			figure_name=str(SPECIES[0])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']+".png"
-			if not os.path.isdir(DIRECTORY_NAME):
-				os.mkdir(DIRECTORY_NAME)
-			destination_dir=os.path.abspath(DIRECTORY_NAME)
+			figure_name=str(config['SPECIES'])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']+".png"
+			if not os.path.isdir(config["RUN_NAME"]):
+				os.mkdir(config["RUN_NAME"])
+			destination_dir=os.path.abspath(config["RUN_NAME"])
 			plt.savefig(os.path.join(destination_dir,figure_name))
 			#plt.show()
 			plt.close()
 	return
-'''
+
 def plot_predictors(predictors,max_size,out_fname):
 	predictor_coefs = []
 	predictor_intercepts = []
@@ -423,4 +423,3 @@ def plot_predictors(predictors,max_size,out_fname):
 	plt.savefig(str(out_fname)+".png")
 	plt.close()
 	return
-'''
