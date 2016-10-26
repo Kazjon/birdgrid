@@ -344,7 +344,7 @@ def plot_birds_over_time(predictors,locations,config):
 					season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
-						plt.plot(x,y*100,color='blue')
+						plt.plot(x,[v*100 for v in y],color='blue')
 					
 					if len(seasontraindata_winter)>=2:
 						if year-1 in yearslist:
@@ -368,7 +368,7 @@ def plot_birds_over_time(predictors,locations,config):
 					season_array=np.asarray(group[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
-						plt.plot(x,y*100,color='blue')
+						plt.plot(x,[v*100 for v in y],color='blue')
 					if len(group) >=2:
 						verticalarea_startdate=np.asarray(group[(group['MONTH']==group['MONTH'].min())]['dates'])
 						area_startdate=verticalarea_startdate[0]
