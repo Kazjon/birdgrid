@@ -326,12 +326,13 @@ def plot_birds_over_time(predictors,locations,config):
 			plt.gcf().autofmt_xdate()
 			SeasonTrainData = [dt.datetime.strptime(d,'%Y-%m').date() for d in SeasonTrainData]
 			NonSeasonalData=[dt.datetime.strptime(d,'%Y-%m').date() for d in NonSeasonalData]
-			plt.scatter(NonSeasonalData,NonSeasonalDataFrequency,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
+			plt.ylim([0,100])
+			#plt.scatter(NonSeasonalData,NonSeasonalDataFrequency*100,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
 			seasontraindatapredictions=Model_Object.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using regression model
-			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency,label=SeasonTrainData_Label)
-			plt.scatter(TestDataforplotting,Actualspecies_count,color='black',label=TestData_Label)              #Scatter plot of Test Data with Actual Frequencies
+			plt.scatter(SeasonTrainData,SeasonTrainDataFrequency*100,label=SeasonTrainData_Label)
+			plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)              #Scatter plot of Test Data with Actual Frequencies
 			grouped_seasonedTraindata=AllDataSeasonal_frame.groupby('years')
-			plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"],linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
+			plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
 			season_name=AllDataSeasonal_frame.season.unique()
 			if season_name=='WINTER':
 				year_values=AllDataSeasonal_frame.years.unique()
@@ -343,7 +344,7 @@ def plot_birds_over_time(predictors,locations,config):
 					season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
-						plt.plot(x,y,color='blue')
+						plt.plot(x,y*100,color='blue')
 					
 					if len(seasontraindata_winter)>=2:
 						if year-1 in yearslist:
@@ -367,15 +368,15 @@ def plot_birds_over_time(predictors,locations,config):
 					season_array=np.asarray(group[['dates','freqs']])
 					for start, stop in zip(season_array[:-1], season_array[1:]):
 						x, y = zip(start, stop)
-						plt.plot(x,y,color='blue')
+						plt.plot(x,y*100,color='blue')
 					if len(group) >=2:
 						verticalarea_startdate=np.asarray(group[(group['MONTH']==group['MONTH'].min())]['dates'])
 						area_startdate=verticalarea_startdate[0]
 						verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
 						area_enddate=verticalarea_enddate[0]
 						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
-			plt.plot(TestDataforplotting,Predictions,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
-			plt.plot(SeasonTrainData,seasontraindatapredictions,'r-',linewidth=1)  #plotting predictor line for sesonal train data
+			plt.plot(TestDataforplotting,Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
+			plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
 			#plt.plot(SeasonTrainData,SeasonTrainDataFrequency,'b-',linewidth=0.6,alpha=0.7,label='SeasonalData_Line')
 			plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
@@ -392,7 +393,7 @@ def plot_birds_over_time(predictors,locations,config):
 			x1,x2,y1,y2=plt.axis()
 			plt.axis((x1,x2,0,y2))
 			insetfig= plt.axes([0.6,0.8,0.2,0.2])							#Setting coordinates and width,height of inset 
-			themap=Basemap(projection='merc',llcrnrlat=lat_min-config['GRID_SIZE'],urcrnrlat=lat_max,llcrnrlon=lon_min-config['GRID_SIZE'],urcrnrlon=lon_max,rsphere=6371200.,resolution='l',area_thresh=10000)
+			themap=Basemap(projection='merc',llcrnrlat=lat_min-config['GRID_SIZE'],urcrnrlat=lat_max+config['GRID_SIZE'],llcrnrlon=lon_min-config['GRID_SIZE'],urcrnrlon=lon_max+config['GRID_SIZE'],rsphere=6371200.,resolution='l',area_thresh=10000)
 			#themap = Basemap(llcrnrlon=-126, llcrnrlat=16, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 			reclats=[lat,lat+config['GRID_SIZE'],lat+config['GRID_SIZE'],lat]   #Rectangular latitude coordinates for displaying grid in plot
 			reclons=[lon,lon,lon+config['GRID_SIZE'],lon+config['GRID_SIZE']]	#Rectangular longitude coordinates for displaying grid in plot
