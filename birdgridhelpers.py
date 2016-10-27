@@ -308,6 +308,10 @@ def plot_birds_over_time(predictors,locations,config):
 		NonSeasonalData_Label="Sightings(all months)"
 		RegressorLine_Label="Expected sightings"
 		YAxis_Label="Number of sightings"
+	if config['REGRESSION_LINE']:
+		Line="Regression Line"
+	else:
+		Line="Without Regression Line"
 		
 	for p in predictors:
 		for Model_Object,Predictions,Actualspecies_count,TestDataforplotting,latitude,longitude,NonSeasonalDataFrequency,NonSeasonalData,season,predicting_year,SeasonTrainData,SeasonTrainDataFrequency,TrainData,Nonseasonaldatamonths,TrainData_years,TrainData_months,mean_abs_errors in zip(p["Model_object"],p["predictions"],p["actualspeciescount"],p["TestDataforplotting"],p["location"]["latitude"],p["location"]["longitude"],p['NonSeasonalDataFrequency'],p['NonSeasonalData'],p['seasonlist'],p['predictingyearlist'],p['seasonwisetraindata'],p['seasonwisetrainDatafrequency'],p['traindata'],p['Nonseasonaldata-timeframe'],p['TrainData_years'],p['TrainData_months'],p["stats"]["mean_abs_errors"]):
@@ -415,9 +419,9 @@ def plot_birds_over_time(predictors,locations,config):
 			plt.xticks([])
 			plt.yticks([])
 			figure_name=str(config['SPECIES'])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']+".png"
-			if not os.path.isdir(config["RUN_NAME"]):
-				os.mkdir(config["RUN_NAME"])
-			destination_dir=os.path.abspath(config["RUN_NAME"])
+			if not os.path.isdir(config["RUN_NAME"]+"-"+Line):
+				os.mkdir(config["RUN_NAME"]+"-"+Line)
+			destination_dir=os.path.abspath(config["RUN_NAME"]+"-"+Line)
 			plt.savefig(os.path.join(destination_dir,figure_name))
 			#plt.show()
 			plt.close()
@@ -443,7 +447,7 @@ def plot_predictors(predictors,config, max_size,out_fname, minlimit = -100):
 				predictor_test_maes.append(errors[1])
 				predictor_names.append(str(lat.values[0])+"_"+str(long.values[0])+"_"+str(predicting_year)+"_"+str(season))
 	pred_df = pd.DataFrame({"name":predictor_names,"coef":predictor_coefs,"intercept":predictor_intercepts,"train_maes":predictor_train_maes,"test_maes":predictor_test_maes,"expvar":predictor_expvar,"test/train_mae":[tr/te for tr,te in zip(predictor_test_maes,predictor_train_maes)]}) #"r2_train":predictor_variance,"r2_test":predictor_surprise,
-	pd.set_option('expand_frame_repr', False)
+	pd.set_option('expand_frame_repr',False)
 	print pred_df
 	sorted_pred_df = pred_df.sort_values("test/train_mae")
 	print sorted_pred_df
@@ -452,5 +456,5 @@ def plot_predictors(predictors,config, max_size,out_fname, minlimit = -100):
 	plt.xlabel("Train MAE")
 	plt.ylabel("Test MAE")
 	#plt.show()
-	plt.savefig(str(out_fname)+"variance_by_surprise.png")
+	plt.savefig(str(out_fname)+"predictor_plot_variance_by_surprise.png")
 	plt.close()
