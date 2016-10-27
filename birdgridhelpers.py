@@ -286,6 +286,7 @@ def model_location_novelty_over_time(location,SEASONS,config):
 
 
 def plot_birds_over_time(predictors,locations,config):
+<<<<<<< HEAD
 	lat_list=[]
 	lon_list=[]
 	for q in predictors:
@@ -296,6 +297,14 @@ def plot_birds_over_time(predictors,locations,config):
 	lat_max = max(lat_list)
 	lon_min = min(lon_list)
 	lon_max = max(lon_list)	
+=======
+	locationslatitude = np.asarray(locations['LATITUDE'])
+	locationslongitude = np.asarray(locations['LONGITUDE'])
+	lat_min = min(locationslatitude)
+	lat_max = max(locationslatitude)
+	lon_min = min(locationslongitude)
+	lon_max = max(locationslongitude)
+>>>>>>> origin/master
 	if config['use_chance_not_count']:
 		SeasonTrainData_Label="Sighting chance (months)"
 		TestData_Label="Sighting chance( )"
@@ -379,9 +388,14 @@ def plot_birds_over_time(predictors,locations,config):
 						verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
 						area_enddate=verticalarea_enddate[0]
 						plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
+<<<<<<< HEAD
 			if config['REGRESSION_LINE']:
 				plt.plot(TestDataforplotting,Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 				plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
+=======
+			plt.plot(TestDataforplotting,Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
+			plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
+>>>>>>> origin/master
 			#plt.plot(NonSeasonalData,NonSeasonalDataFrequency,linewidth=0.25,alpha=0.3,label=NonSeasonalData_Label)
 			#plt.plot(SeasonTrainData,SeasonTrainDataFrequency,'b-',linewidth=0.6,alpha=0.7,label='SeasonalData_Line')
 			plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
