@@ -20,22 +20,23 @@ import matplotlib.dates as mdates
 predictors = []
 SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
 config={}
-config['SPECIES']='Cathartes_aura'
+config['SPECIES']='Turdus_migratorius'
 config["TIME_STEP"] = "monthly"
 config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
 config['START_YEAR']=2003
-config['PREDICTION_START_YEAR']=2010
+config['PREDICTION_START_YEAR']=2009
 config['END_YEAR']=2012
 config['GRID_SIZE']=5
 config['PREDICTOR']="theilsen"
 config['use_chance_not_count']=True
-config['REGRESSION_LINE']=True
+config['REGRESSION_LINE']=[True,False,'nodata']
+#config['HIDE_DATA']=True
 if config['use_chance_not_count']:
 	Model_mode="chance_mode"
 else:
 	Model_mode="count_mode"
 
-config["RUN_NAME"]=str(config['SPECIES'])+"-"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"-"+str(config['GRID_SIZE'])+"-"+str(config['PREDICTOR'])+"-"+Model_mode
+config["RUN_NAME"]=str(config['SPECIES'])+"-"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"-"+str(config['GRID_SIZE'])+"-"+str(config['PREDICTOR']+"-"+Model_mode)
 
 if os.path.isfile(config["RUN_NAME"]+"_predictors.p") and os.path.isfile(config["RUN_NAME"]+"_locations.p"):
 	locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
@@ -46,7 +47,7 @@ else:
 		locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
 	else:
 		observations = load_observations(config) #Load these in from somewhere, one row per observation, columns 0 and 1 are lat and lon
-		locations=init_birdgrid(observations,config)  #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
+		locations=init_birdgrid(observations,config,SEASONS)  #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
 
 
 	#Plot our species frequency observations
