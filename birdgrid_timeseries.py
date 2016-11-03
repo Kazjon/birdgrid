@@ -17,49 +17,52 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 import matplotlib.dates as mdates
 
+species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta cristata","Turdus_migratorius","Carduelis_pinus"]
 predictors = []
 SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
-config={}
-config['SPECIES']='Turdus_migratorius'
-config["TIME_STEP"] = "monthly"
-config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
-config['START_YEAR']=2003
-config['PREDICTION_START_YEAR']=2009
-config['END_YEAR']=2012
-config['GRID_SIZE']=5
-config['PREDICTOR']="theilsen"
-config['use_chance_not_count']=True
-config['REGRESSION_LINE']=[True,False,'nodata']
-#config['HIDE_DATA']=True
-if config['use_chance_not_count']:
-	Model_mode="chance_mode"
-else:
-	Model_mode="count_mode"
 
-config["RUN_NAME"]=str(config['SPECIES'])+"-"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"-"+str(config['GRID_SIZE'])+"-"+str(config['PREDICTOR']+"-"+Model_mode)
-
-if os.path.isfile(config["RUN_NAME"]+"_predictors.p") and os.path.isfile(config["RUN_NAME"]+"_locations.p"):
-	locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
-	with open(config["RUN_NAME"]+'_predictors.p',"rb") as pf:
-		predictors = pickle.load(pf)
-else:
-	if os.path.isfile(config["RUN_NAME"]+"_locations.p"):
-		locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
+for sp in species_list:
+	config={}
+	config['SPECIES']='Turdus_migratorius'
+	config["TIME_STEP"] = "monthly"
+	config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
+	config['START_YEAR']=2003
+	config['PREDICTION_START_YEAR']=2009
+	config['END_YEAR']=2012
+	config['GRID_SIZE']=5
+	config['PREDICTOR']="theilsen"
+	config['use_chance_not_count']=True
+	config['REGRESSION_LINE']=[True,False,'nodata']
+	#config['HIDE_DATA']=True
+	if config['use_chance_not_count']:
+		Model_mode="chance_mode"
 	else:
-		observations = load_observations(config) #Load these in from somewhere, one row per observation, columns 0 and 1 are lat and lon
-		locations=init_birdgrid(observations,config,SEASONS)  #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
+		Model_mode="count_mode"
+
+	config["RUN_NAME"]=str(config['SPECIES'])+"-"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"-"+str(config['GRID_SIZE'])+"-"+str(config['PREDICTOR']+"-"+Model_mode)
+
+	if os.path.isfile(config["RUN_NAME"]+"_predictors.p") and os.path.isfile(config["RUN_NAME"]+"_locations.p"):
+		locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
+		with open(config["RUN_NAME"]+'_predictors.p',"rb") as pf:
+			predictors = pickle.load(pf)
+	else:
+		if os.path.isfile(config["RUN_NAME"]+"_locations.p"):
+			locations=pd.read_pickle(config["RUN_NAME"]+"_locations.p")
+		else:
+			observations = load_observations(config) #Load these in from somewhere, one row per observation, columns 0 and 1 are lat and lon
+			locations=init_birdgrid(observations,config,SEASONS)  #Calculate these from the above, Array of dicts, each dict contains lat, lon and data for each timestep
 
 
-	#Plot our species frequency observations
-	plot_observation_frequency(locations,SEASONS,config)
-	
-	# matrix of models of shape locations x timesteps.
-	
-	for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
-		predictors.append(model_location_novelty_over_time(location,SEASONS,config))
-	with open(config["RUN_NAME"]+'_predictors.p',"wb") as pf:
-		pickle.dump(predictors,pf)
+		#Plot our species frequency observations
+		plot_observation_frequency(locations,SEASONS,config)
 
-plot_birds_over_time(predictors,locations,config)
+		# matrix of models of shape locations x timesteps.
 
-plot_predictors(predictors, config, max_size=100, out_fname =config['RUN_NAME'])
+		for k,location in locations.groupby(['LATITUDE','LONGITUDE'],as_index=False):
+			predictors.append(model_location_novelty_over_time(location,SEASONS,config))
+		with open(config["RUN_NAME"]+'_predictors.p',"wb") as pf:
+			pickle.dump(predictors,pf)
+
+	plot_birds_over_time(predictors,locations,config)
+
+	plot_predictors(predictors, config, max_size=100, out_fname =config['RUN_NAME'])
