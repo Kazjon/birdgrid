@@ -17,17 +17,17 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 import matplotlib.dates as mdates
 
-species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta cristata","Turdus_migratorius","Carduelis_pinus"]
+species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta cristata","Carduelis_pinus"]
 predictors = []
 SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
 
 for sp in species_list:
 	config={}
-	config['SPECIES']='Turdus_migratorius'
+	config['SPECIES']=sp
 	config["TIME_STEP"] = "monthly"
 	config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
 	config['START_YEAR']=2003
-	config['PREDICTION_START_YEAR']=2009
+	config['PREDICTION_START_YEAR']=2012
 	config['END_YEAR']=2012
 	config['GRID_SIZE']=5
 	config['PREDICTOR']="theilsen"
