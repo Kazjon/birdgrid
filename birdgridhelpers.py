@@ -434,7 +434,7 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withRegressionLine.png"
-					if not config['PLOT_SINGLE']:
+					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
 					else:
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
@@ -442,14 +442,14 @@ def plot_birds_over_time(predictors,locations,config):
 				elif regline is False:
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withoutRegressionLine.png"
-					if not config['PLOT_SINGLE']:
+					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
 					else:
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
 				elif regline=="nodata" and TestDataYear==2012:
 					Plot_type="_withoutData.png"
-					if not config['PLOT_SINGLE']:
+					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
 					else:
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
