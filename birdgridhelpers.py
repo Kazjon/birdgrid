@@ -392,11 +392,11 @@ def plot_birds_over_time(predictors,locations,config):
 							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
 							
 				def plot(Plot_type):
-					plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left')
+					plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=20)
 					#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
 					plt.tight_layout(pad=20)
-					plt.xlabel("Time")
-					plt.ylabel(YAxis_Label)
+					plt.xlabel("Time",fontsize=20)
+					plt.ylabel(YAxis_Label,fontsize=20)
 					plt.xticks(rotation='horizontal')
 					plt.setp(plt.gca().get_xminorticklabels(),visible=False)
 					x1,x2,y1,y2=plt.axis()
@@ -420,7 +420,7 @@ def plot_birds_over_time(predictors,locations,config):
 					longg,latt=lon,lat
 					x, y = themap(longg,latt)
 					lonpoint, latpoint = themap(x,y,inverse=True)       
-					plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=10)
+					plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=20)
 					figure_name=str(config['SPECIES'])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']
 					if not os.path.isdir(config["RUN_NAME"]):
 						os.mkdir(config["RUN_NAME"])
@@ -434,14 +434,26 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withRegressionLine.png"
-					plot(Plot_type)
+					if not config['STRING_VALUE']:
+						plot(Plot_type)
+					if config['STRING_VALUE']:
+						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+							plot(Plot_type)
 				elif regline is False:
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withoutRegressionLine.png"
-					plot(Plot_type)
+					if not config['STRING_VALUE']:
+						plot(Plot_type)
+					if config['STRING_VALUE']:
+						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+							plot(Plot_type)
 				elif regline=="nodata" and TestDataYear==2012:
 					Plot_type="_withoutData.png"
-					plot(Plot_type)
+					if not config['STRING_VALUE']:
+						plot(Plot_type)
+					if config['STRING_VALUE']:
+						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+							plot(Plot_type)
 				else:
 					plt.close()
 

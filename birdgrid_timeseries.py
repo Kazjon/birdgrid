@@ -17,23 +17,29 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 import matplotlib.dates as mdates
 
-species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta cristata","Carduelis_pinus"]
+species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta_cristata","Carduelis_pinus"]
 predictors = []
 SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
 
+config={}
+config["TIME_STEP"] = "monthly"
+config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
+config['START_YEAR']=2003
+config['PREDICTION_START_YEAR']=2009
+config['END_YEAR']=2012
+config['GRID_SIZE']=5
+config['PREDICTOR']="theilsen"
+config['use_chance_not_count']=True
+config['REGRESSION_LINE']=[True,False,'nodata']
+config['PLOT_STRING']={}
+config['PLOT_STRING']['LAT']=30
+config['PLOT_STRING']['LON']=-89
+config['PLOT_STRING']['PREDICTING_YEAR']=2012
+config['PLOT_STRING']['SEASON']="FALL"
+config['STRING_VALUE']=str(config['PLOT_STRING']['LAT'])+str(config['PLOT_STRING']['LON'])+str(config['PLOT_STRING']['PREDICTING_YEAR'])+str(config['PLOT_STRING']['SEASON'])
+
 for sp in species_list:
-	config={}
 	config['SPECIES']=sp
-	config["TIME_STEP"] = "monthly"
-	config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
-	config['START_YEAR']=2003
-	config['PREDICTION_START_YEAR']=2012
-	config['END_YEAR']=2012
-	config['GRID_SIZE']=5
-	config['PREDICTOR']="theilsen"
-	config['use_chance_not_count']=True
-	config['REGRESSION_LINE']=[True,False,'nodata']
-	#config['HIDE_DATA']=True
 	if config['use_chance_not_count']:
 		Model_mode="chance_mode"
 	else:
