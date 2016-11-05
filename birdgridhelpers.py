@@ -434,25 +434,25 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withRegressionLine.png"
-					if not config['STRING_VALUE']:
+					if not config['PLOT_SINGLE']:
 						plot(Plot_type)
-					if config['STRING_VALUE']:
-						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+					else:
+						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
 				elif regline is False:
 					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withoutRegressionLine.png"
-					if not config['STRING_VALUE']:
+					if not config['PLOT_SINGLE']:
 						plot(Plot_type)
-					if config['STRING_VALUE']:
-						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+					else:
+						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
 				elif regline=="nodata" and TestDataYear==2012:
 					Plot_type="_withoutData.png"
-					if not config['STRING_VALUE']:
+					if not config['PLOT_SINGLE']:
 						plot(Plot_type)
-					if config['STRING_VALUE']:
-						if config['PLOT_STRING']['LAT']==lat and config['PLOT_STRING']['LON']==lon and config['PLOT_STRING']['PREDICTING_YEAR']==predicting_year and config['PLOT_STRING']['SEASON']==season:
+					else:
+						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
 				else:
 					plt.close()

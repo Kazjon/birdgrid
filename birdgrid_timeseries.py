@@ -31,12 +31,14 @@ config['GRID_SIZE']=5
 config['PREDICTOR']="theilsen"
 config['use_chance_not_count']=True
 config['REGRESSION_LINE']=[True,False,'nodata']
-config['PLOT_STRING']={}
-config['PLOT_STRING']['LAT']=30
-config['PLOT_STRING']['LON']=-89
-config['PLOT_STRING']['PREDICTING_YEAR']=2012
-config['PLOT_STRING']['SEASON']="FALL"
-config['STRING_VALUE']=str(config['PLOT_STRING']['LAT'])+str(config['PLOT_STRING']['LON'])+str(config['PLOT_STRING']['PREDICTING_YEAR'])+str(config['PLOT_STRING']['SEASON'])
+
+'''
+config['PLOT_SINGLE']={}
+config['PLOT_SINGLE']['LAT']=30
+config['PLOT_SINGLE']['LON']=-89
+config['PLOT_SINGLE']['PREDICTING_YEAR']=2012
+config['PLOT_SINGLE']['SEASON']="FALL"
+#'''
 
 for sp in species_list:
 	config['SPECIES']=sp
