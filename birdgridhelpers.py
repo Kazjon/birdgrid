@@ -312,7 +312,7 @@ def plot_birds_over_time(predictors,locations,config):
 		TestData_Label="Sighting chance( )"
 		NonSeasonalData_Label="Sighting chance (all months)" 
 		RegressorLine_Label="Expected sighting chance"
-		YAxis_Label="Chance to see"
+		YAxis_Label="Chance to see (%)"
 	else:
 		SeasonTrainData_Label="Sightings( months)"
 		TestData_Label="Sightings( )"
@@ -392,17 +392,21 @@ def plot_birds_over_time(predictors,locations,config):
 							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
 							
 				def plot(Plot_type):
-					plt.title(config["SPECIES"]+"\n"+str(config['PREDICTION_START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=20)
+					plt.title(config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=30)
 					#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
 					plt.tight_layout(pad=20)
-					plt.xlabel("Time",fontsize=20)
-					plt.ylabel(YAxis_Label,fontsize=20)
-					plt.xticks(rotation='horizontal')
+					plt.xlabel("Time",fontsize=25)
+					plt.ylabel(YAxis_Label,fontsize=25)
+					plt.xticks(rotation='horizontal',ha="center")
 					plt.setp(plt.gca().get_xminorticklabels(),visible=False)
+					plt.setp(plt.gca().xaxis.get_ticklines(),markersize=15)
+					plt.setp(plt.gca().yaxis.get_ticklines(),markersize=15)
+					plt.setp(plt.gca().xaxis.get_ticklabels(),fontsize=20)
+					plt.setp(plt.gca().yaxis.get_ticklabels(),fontsize=20)
 					x1,x2,y1,y2=plt.axis()
 					plt.xlim(AllData_framexlim[0],x2)
 					#plt.axis((x1,x2,0,y2))
-					insetfig= plt.axes([0.6,0.8,0.2,0.2])							#Setting coordinates and width,height of inset 
+					insetfig= plt.axes([0.65,0.75,0.2,0.2])							#Setting coordinates and width,height of inset
 					themap=Basemap(projection='merc',llcrnrlat=lat_min-config['GRID_SIZE'],urcrnrlat=lat_max+config['GRID_SIZE'],llcrnrlon=lon_min-config['GRID_SIZE'],urcrnrlon=lon_max+config['GRID_SIZE'],rsphere=6371200.,resolution='l',area_thresh=10000)
 					#themap = Basemap(llcrnrlon=-126, llcrnrlat=16, urcrnrlon=-64,urcrnrlat=49, projection='lcc', lat_1=33, lat_2=45,lon_0=-95, resolution='h', area_thresh=10000)
 					reclats=[lat,lat+config['GRID_SIZE'],lat+config['GRID_SIZE'],lat]   #Rectangular latitude coordinates for displaying grid in plot
@@ -420,7 +424,7 @@ def plot_birds_over_time(predictors,locations,config):
 					longg,latt=lon,lat
 					x, y = themap(longg,latt)
 					lonpoint, latpoint = themap(x,y,inverse=True)       
-					plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=20)
+					plt.title("Location"+'(%5.1fW,%3.1fN)'%(lonpoint,latpoint),fontsize=30)
 					figure_name=str(config['SPECIES'])+"-"+str(lat)+"-"+str(lon)+"-"+str(predicting_year)+"-"+str(season)+"-"+config['PREDICTOR']
 					if not os.path.isdir(config["RUN_NAME"]):
 						os.mkdir(config["RUN_NAME"])

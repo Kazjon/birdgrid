@@ -25,19 +25,19 @@ config={}
 config["TIME_STEP"] = "monthly"
 config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
 config['START_YEAR']=2003
-config['PREDICTION_START_YEAR']=2012
+config['PREDICTION_START_YEAR']=2010
 config['END_YEAR']=2012
-config['GRID_SIZE']=5
+config['GRID_SIZE']=3
 config['PREDICTOR']="theilsen"
 config['use_chance_not_count']=True
-config['REGRESSION_LINE']=[True,False,'nodata']
+config['REGRESSION_LINE']=[True]#,False,'nodata']
 
-'''
+''' Delete the # at the beginning of this line (and adjust the below) to enable single-plot mode, add a # to disable it again.
 config['PLOT_SINGLE']={}
-config['PLOT_SINGLE']['LAT']=30
-config['PLOT_SINGLE']['LON']=-89
+config['PLOT_SINGLE']['LAT']=46
+config['PLOT_SINGLE']['LON']=-118
 config['PLOT_SINGLE']['PREDICTING_YEAR']=2012
-config['PLOT_SINGLE']['SEASON']="FALL"
+config['PLOT_SINGLE']['SEASON']="Winter"
 #'''
 
 for sp in species_list:
