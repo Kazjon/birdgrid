@@ -277,7 +277,6 @@ def model_location_novelty_over_time(location,SEASONS,config):
 				NonSeasonal_Date_TestData.append(NonSeasonalDate_TestData)
 				NonSeasonal_Frequency_TestData.append(NonSeasonalFrequency_TestData)
 				NonSeasonal_Timeframe_TestData.append(NonSeasonaltimeframe_TestData)
-				
 			else:
 				continue
 			
@@ -374,7 +373,6 @@ def plot_birds_over_time(predictors,locations,config):
 				grouped_seasonedTraindata=AllDataSeasonal_frame.groupby('years')
 				plt.plot([d+timedelta(15) for d in AllData_frame["dates"].tolist()],AllData_frame["freqs"]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
 				#plt.plot(AllData_frame_TestData["dates"].tolist(),AllData_frame_TestData["freqs"]*100,linewidth=0.6,alpha=0.7)
-				plt.plot()
 				season_name=AllDataSeasonal_frame.season.unique()
 				TestData_framearray=np.asarray(TestData_frame[['dates','freqs']])
 				for start,stop in zip(TestData_framearray[:-1],TestData_framearray[1:]):
@@ -421,7 +419,6 @@ def plot_birds_over_time(predictors,locations,config):
 							verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
 							area_enddate=verticalarea_enddate[0]
 							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
-				
 							
 				def plot(Plot_type):
 					plt.title(config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=30)
@@ -449,7 +446,6 @@ def plot_birds_over_time(predictors,locations,config):
 					themap.drawstates()
 					themap.drawmapboundary(fill_color='grey')
 					themap.fillcontinents(color='gainsboro')
-					
 					x3,y3=themap(reclons,reclats)
 					x3y3=zip(x3,y3)
 					p= Polygon(x3y3, facecolor='red', alpha=0.4)       #Plotting rectangular polygon grid in Basemap
@@ -527,3 +523,4 @@ def plot_predictors(predictors,config, max_size,out_fname, minlimit = -100):
 	#plt.show()
 	plt.savefig(str(out_fname)+"predictor_plot_variance_by_surprise.png")
 	plt.close()
+	
