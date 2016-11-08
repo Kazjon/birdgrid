@@ -5,7 +5,7 @@ import math
 import os.path
 from scipy import interpolate
 import datetime as dt
-from datetime import datetime
+from datetime import datetime,timedelta
 from mpl_toolkits.basemap import Basemap
 from matplotlib.mlab import griddata
 from matplotlib.ticker import MultipleLocator
@@ -370,16 +370,16 @@ def plot_birds_over_time(predictors,locations,config):
 				plt.ylim([0,100])
 				#plt.scatter(NonSeasonalData,NonSeasonalDataFrequency*100,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
 				seasontraindatapredictions=Model_Object.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using regression model
-				plt.scatter(SeasonTrainData,SeasonTrainDataFrequency*100,label=SeasonTrainData_Label)
+				plt.scatter([d+timedelta(15) for d in SeasonTrainData],SeasonTrainDataFrequency*100,label=SeasonTrainData_Label)
 				grouped_seasonedTraindata=AllDataSeasonal_frame.groupby('years')
-				plt.plot(AllData_frame["dates"].tolist(),AllData_frame["freqs"]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
+				plt.plot([d+timedelta(15) for d in AllData_frame["dates"].tolist()],AllData_frame["freqs"]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
 				#plt.plot(AllData_frame_TestData["dates"].tolist(),AllData_frame_TestData["freqs"]*100,linewidth=0.6,alpha=0.7)
 				plt.plot()
 				season_name=AllDataSeasonal_frame.season.unique()
 				TestData_framearray=np.asarray(TestData_frame[['dates','freqs']])
 				for start,stop in zip(TestData_framearray[:-1],TestData_framearray[1:]):
 					x, y = zip(start,stop)
-					plt.plot(x,[v*100 for v in y],color='blue')
+					plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
 				plt.axvspan(TestDataforplotting[0],TestDataforplotting[2],color='b',alpha=0.1,lw=1)
 				if season_name=='WINTER':
 					year_values=AllDataSeasonal_frame.years.unique()
@@ -391,7 +391,7 @@ def plot_birds_over_time(predictors,locations,config):
 						season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
 						for start, stop in zip(season_array[:-1], season_array[1:]):
 							x, y = zip(start, stop)
-							plt.plot(x,[v*100 for v in y],color='blue')
+							plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
 						if len(seasontraindata_winter)>=2:
 							if year-1 in yearslist:
 								verticalarea_startdate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year-1)]['dates'])
@@ -414,7 +414,7 @@ def plot_birds_over_time(predictors,locations,config):
 						season_array=np.asarray(group[['dates','freqs']])
 						for start, stop in zip(season_array[:-1], season_array[1:]):
 							x, y = zip(start, stop)
-							plt.plot(x,[v*100 for v in y],color='blue')
+							plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
 						if len(group) >=2:
 							verticalarea_startdate=np.asarray(group[(group['MONTH']==group['MONTH'].min())]['dates'])
 							area_startdate=verticalarea_startdate[0]
@@ -470,7 +470,7 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.plot(TestDataforplotting,Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 					plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
 					plt.plot(NonSeasonal_Date_TestData,NonSeasonal_TestData_Predictions*100,'r-',linewidth=1)
-					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
+					plt.scatter([d+timedelta(15) for d in TestDataforplotting],Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withRegressionLine.png"
 					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
@@ -478,14 +478,14 @@ def plot_birds_over_time(predictors,locations,config):
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
 				elif regline is False:
-					plt.scatter(TestDataforplotting,Actualspecies_count*100,color='black',label=TestData_Label)
+					plt.scatter([d+timedelta(15) for d in TestDataforplotting],Actualspecies_count*100,color='black',label=TestData_Label)
 					Plot_type="_withoutRegressionLine.png"
 					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
 					else:
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
-				elif regline=="nodata" and TestDataYear==2012:
+				elif regline=="nodata":
 					Plot_type="_withoutData.png"
 					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
