@@ -316,6 +316,7 @@ def plot_birds_over_time(predictors,locations,config):
 				plt.gca().xaxis.set_minor_locator(mdates.MonthLocator())
 				plt.gcf().autofmt_xdate()
 				plt.ylim([0,100])
+<<<<<<< HEAD
 				plt.yticks(np.arange(0,100,10))
 				df1=pd.concat([Nonseasonal_TrainData,TrainData],ignore_index=True)
 				df2=pd.concat([TestData,NonSeasonalData_TestData],ignore_index=True)
@@ -366,6 +367,61 @@ def plot_birds_over_time(predictors,locations,config):
 						area_enddate=np.asarray(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].max()+1)]['Date_Format'])			
 						plt.axvspan(area_startdate[0],area_enddate[0],color='b',alpha=0.1,lw=1)
 				
+=======
+				#plt.scatter(NonSeasonalData,NonSeasonalDataFrequency*100,alpha=0.3,label='Non Seasonal Datapoints')    #Scatter plot of Non-Seasonal-Data over Training years
+				seasontraindatapredictions=Model_Object.predict(TrainData)     # Predicting the frequency for the Seasonal Train Data using regression model
+				plt.scatter([d+timedelta(15) for d in SeasonTrainData],SeasonTrainDataFrequency*100,label=SeasonTrainData_Label)
+				grouped_seasonedTraindata=AllDataSeasonal_frame.groupby('years')
+				plt.plot([d+timedelta(15) for d in AllData_frame["dates"].tolist()],AllData_frame["freqs"]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
+				#plt.plot(AllData_frame_TestData["dates"].tolist(),AllData_frame_TestData["freqs"]*100,linewidth=0.6,alpha=0.7)
+				season_name=AllDataSeasonal_frame.season.unique()
+				TestData_framearray=np.asarray(TestData_frame[['dates','freqs']])
+				for start,stop in zip(TestData_framearray[:-1],TestData_framearray[1:]):
+					x, y = zip(start,stop)
+					plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
+				plt.axvspan(TestDataforplotting[0],TestDataforplotting[2],color='b',alpha=0.1,lw=1)
+				if season_name=='WINTER':
+					year_values=AllDataSeasonal_frame.years.unique()
+					for year in year_values:
+						seasontraindata_winter=AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year)&(AllDataSeasonal_frame['MONTH']!=12)]
+						seasontraindata_winter=seasontraindata_winter.append(AllDataSeasonal_frame[(AllDataSeasonal_frame['years']==year-1)&(AllDataSeasonal_frame['MONTH']==12)],ignore_index=True)
+						seasontraindata_winter=seasontraindata_winter.sort(['years','MONTH'], ascending=[True,True])
+						yearslist=seasontraindata_winter.years.unique()
+						season_array=np.asarray(seasontraindata_winter[['dates','freqs']])
+						for start, stop in zip(season_array[:-1], season_array[1:]):
+							x, y = zip(start, stop)
+							plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
+						if len(seasontraindata_winter)>=2:
+							if year-1 in yearslist:
+								verticalarea_startdate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year-1)]['dates'])
+								area_startdate=verticalarea_startdate[0]
+								dft=seasontraindata_winter[(seasontraindata_winter['years']==year)]
+								if len(dft)==1:
+									verticalarea_enddate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)]['dates'])
+									area_enddate=verticalarea_enddate[0]
+								else:
+									verticalarea_enddate=np.asarray(dft[(dft['MONTH']==dft['MONTH'].max())]['dates'])
+									area_enddate=verticalarea_enddate[0]	
+							else:
+								verticalarea_startdate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)&(seasontraindata_winter['MONTH']==seasontraindata_winter['MONTH'].min())]['dates'])
+								area_startdate=verticalarea_startdate[0]	
+								verticalarea_enddate=np.asarray(seasontraindata_winter[(seasontraindata_winter['years']==year)&(seasontraindata_winter['MONTH']==seasontraindata_winter['MONTH'].max())]['dates'])
+								area_enddate=verticalarea_enddate[0]
+							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)					
+				else:		
+					for name,group in grouped_seasonedTraindata:
+						season_array=np.asarray(group[['dates','freqs']])
+						for start, stop in zip(season_array[:-1], season_array[1:]):
+							x, y = zip(start, stop)
+							plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
+						if len(group) >=2:
+							verticalarea_startdate=np.asarray(group[(group['MONTH']==group['MONTH'].min())]['dates'])
+							area_startdate=verticalarea_startdate[0]
+							verticalarea_enddate=np.asarray(group[(group['MONTH']==group['MONTH'].max())]['dates'])
+							area_enddate=verticalarea_enddate[0]
+							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
+							
+>>>>>>> origin/master
 				def plot(Plot_type):
 					#plt.text(0.1,0.7,config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),horizontalalignment='left',fontsize=30)
 					plt.title(config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=30)
@@ -412,6 +468,7 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.xticks([])
 					plt.yticks([])
 					plt.close()
+<<<<<<< HEAD
 				if regline=='True':
 					plt.plot([d+timedelta(15) for d in AllData_Frame['Date_Format']],AllData_Frame_Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 					plt.scatter([d+timedelta(15) for d in TestData_Dateformat],TestData_Frequency*100,color='black',label=TestData_Label)
@@ -428,12 +485,20 @@ def plot_birds_over_time(predictors,locations,config):
 						area_startdate=np.asarray(TestData[(TestData['MONTH']==TestData['MONTH'].min())]['Date_Format'])
 					area_enddate=np.asarray(NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)]['Date_Format'])
 					plt.axvspan(area_startdate[0],area_enddate[0],color='b',alpha=0.1,lw=1)
+=======
+				if regline is True:
+					plt.plot(TestDataforplotting,Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
+					plt.plot(SeasonTrainData,seasontraindatapredictions*100,'r-',linewidth=1)  #plotting predictor line for sesonal train data
+					plt.plot(NonSeasonal_Date_TestData,NonSeasonal_TestData_Predictions*100,'r-',linewidth=1)
+					plt.scatter([d+timedelta(15) for d in TestDataforplotting],Actualspecies_count*100,color='black',label=TestData_Label)
+>>>>>>> origin/master
 					Plot_type="_withRegressionLine.png"
 					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)
 					else:
 						if config['PLOT_SINGLE']['LAT']==lat and config['PLOT_SINGLE']['LON']==lon and config['PLOT_SINGLE']['PREDICTING_YEAR']==predicting_year and config['PLOT_SINGLE']['SEASON']==season:
 							plot(Plot_type)
+<<<<<<< HEAD
 				elif regline=='False':
 					plt.scatter([d+timedelta(15) for d in TestData_Dateformat],TestData_Frequency*100,color='black',label=TestData_Label)
 					max_month=TestData[(TestData['YEAR']==predicting_year)]
@@ -449,6 +514,10 @@ def plot_birds_over_time(predictors,locations,config):
 						area_startdate=np.asarray(TestData[(TestData['MONTH']==TestData['MONTH'].min())]['Date_Format'])
 					area_enddate=np.asarray(NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)]['Date_Format'])
 					plt.axvspan(area_startdate[0],area_enddate[0],color='b',alpha=0.1,lw=1)
+=======
+				elif regline is False:
+					plt.scatter([d+timedelta(15) for d in TestDataforplotting],Actualspecies_count*100,color='black',label=TestData_Label)
+>>>>>>> origin/master
 					Plot_type="_withoutRegressionLine.png"
 					if 'PLOT_SINGLE' not in config.keys():
 						plot(Plot_type)

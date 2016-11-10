@@ -27,10 +27,14 @@ config["ATTRIBUTES"] = ['LATITUDE','LONGITUDE','YEAR','MONTH']
 config['START_YEAR']=2003
 config['PREDICTION_START_YEAR']=2010
 config['END_YEAR']=2012
-config['GRID_SIZE']=3
+config['GRID_SIZE']=4
 config['PREDICTOR']="theilsen"
 config['use_chance_not_count']=True
+<<<<<<< HEAD
 config['REGRESSION_LINE']=['True']#,'False','nodata']
+=======
+config['REGRESSION_LINE']=[True,False,'nodata']
+>>>>>>> origin/master
 
 ''' Delete the # at the beginning of this line (and adjust the below) to enable single-plot mode, add a # to disable it again.
 config['PLOT_SINGLE']={}
