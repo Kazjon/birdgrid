@@ -421,7 +421,7 @@ def plot_birds_over_time(predictors,locations,config):
 							plt.axvspan(area_startdate,area_enddate,color='b',alpha=0.1,lw=1)
 							
 				def plot(Plot_type):
-					plt.title(config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+"-"+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=30)
+					plt.title(config["SPECIES"].replace("_"," ")+"\n"+str(config['START_YEAR'])+" - "+str(config['END_YEAR'])+"\n"+str(season),loc='left',fontsize=30)
 					#plt.legend(fontsize ='x-small',labelspacing=0.2,bbox_to_anchor=(1, 1),bbox_transform=plt.gcf().transFigure)
 					plt.tight_layout(pad=20)
 					plt.xlabel("Time",fontsize=25)

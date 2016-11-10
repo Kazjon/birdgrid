@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 import matplotlib.dates as mdates
 
-species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta_cristata","Carduelis_pinus"]
+species_list = ["Turdus_migratorius", "Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta_cristata","Carduelis_pinus"]
 predictors = []
 SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
 
@@ -74,3 +74,6 @@ for sp in species_list:
 	plot_birds_over_time(predictors,locations,config)
 
 	plot_predictors(predictors, config, max_size=100, out_fname =config['RUN_NAME'])
+	del predictors
+	del observations
+	del locations
