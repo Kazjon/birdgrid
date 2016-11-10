@@ -30,7 +30,7 @@ config['END_YEAR']=2012
 config['GRID_SIZE']=3
 config['PREDICTOR']="theilsen"
 config['use_chance_not_count']=True
-config['REGRESSION_LINE']=[True]#,False,'nodata']
+config['REGRESSION_LINE']=['True']#,'False','nodata']
 
 ''' Delete the # at the beginning of this line (and adjust the below) to enable single-plot mode, add a # to disable it again.
 config['PLOT_SINGLE']={}
