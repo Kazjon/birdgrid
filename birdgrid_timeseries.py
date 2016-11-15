@@ -19,7 +19,7 @@ import matplotlib.dates as mdates
 
 species_list = ["Falco_sparverius","Melanerpes_carolinus","Lanius_ludovicianus","Cyanocitta_cristata","Carduelis_pinus"]
 predictors = []
-SEASONS = {"WINTER": [12,1,2],"SPRING": [3,4,5],"SUMMER":[6,7,8],"FALL":[9,10,11]}
+SEASONS = {"Winter": [12,1,2],"Spring": [3,4,5],"Summer":[6,7,8],"Fall":[9,10,11]}
 
 config={}
 config["TIME_STEP"] = "monthly"
