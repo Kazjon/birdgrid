@@ -177,7 +177,9 @@ def model_location_novelty_over_time(location,SEASONS,config):
 	Season_TrainData=[]
 	Season_TestData=[]
 	NonSeasonalData_TestData=[]
+	Winter_startyear_Data=[]
 	tr= pd.DataFrame()
+	tr1=pd.DataFrame()
 	LocationData = location
 	d={}
 	
@@ -214,6 +216,12 @@ def model_location_novelty_over_time(location,SEASONS,config):
 				if min_train_year >=2003:
 					Starting_yearData=LocationData[LocationData['MONTH'].isin(SEASONS['Winter'])]
 					Train_Data=Train_Data.append(Starting_yearData[(Starting_yearData['YEAR']==min_train_year-1)&(Starting_yearData['MONTH']==12)],ignore_index=True)
+			
+			Winter_previousyear_Data=pd.DataFrame()
+			for year in range(min_train_year,max_train_year+2):
+				tr1=LocationData[(LocationData['YEAR']==year-1)&(LocationData['MONTH']==11)]
+				Winter_previousyear_Data=Winter_previousyear_Data.append(tr1)
+			
 			TrainData_years=Train_Data['YEAR']	
 			TrainData_months=Train_Data['MONTH']
 			TrainData=Train_Data['timeframe']
@@ -257,7 +265,8 @@ def model_location_novelty_over_time(location,SEASONS,config):
 				NonSeasonalData_TrainData.append(NonSeasonalData)
 				Season_TrainData.append(Train_Data)
 				Season_TestData.append(Test_Data)
-				NonSeasonalData_TestData.append(NonSeasonal_TestData)		
+				NonSeasonalData_TestData.append(NonSeasonal_TestData)
+				Winter_startyear_Data.append(Winter_previousyear_Data)
 			else:
 				continue
 			
@@ -278,6 +287,7 @@ def model_location_novelty_over_time(location,SEASONS,config):
 	d['TrainData']=Season_TrainData
 	d['TestData']=Season_TestData
 	d['NonSeasonalData_TestData']=NonSeasonalData_TestData
+	d['Winter_startyear_Data']=Winter_startyear_Data
 	return d
 
 
@@ -307,7 +317,7 @@ def plot_birds_over_time(predictors,locations,config):
 	
 	for regline in config['REGRESSION_LINE']:
 		for p in predictors:
-			for Model_Object,Predictions,latitude,longitude,season,predicting_year,Nonseasonal_TrainData,TrainData,TestData,NonSeasonalData_TestData in zip(p["Model_object"],p["predictions"],p["location"]["latitude"],p["location"]["longitude"],p['seasonlist'],p['predictingyearlist'],p['Nonseasonal_TrainData'],p['TrainData'],p['TestData'],p['NonSeasonalData_TestData']):
+			for Model_Object,Predictions,latitude,longitude,season,predicting_year,Nonseasonal_TrainData,TrainData,TestData,NonSeasonalData_TestData,Winter_startyear_Data in zip(p["Model_object"],p["predictions"],p["location"]["latitude"],p["location"]["longitude"],p['seasonlist'],p['predictingyearlist'],p['Nonseasonal_TrainData'],p['TrainData'],p['TestData'],p['NonSeasonalData_TestData'],p['Winter_startyear_Data']):
 				plt.figure(figsize=(25,20))	
 				lat=np.unique(latitude)
 				lon=np.unique(longitude)
@@ -337,6 +347,7 @@ def plot_birds_over_time(predictors,locations,config):
 				TestData_Frequency=TestData[config['SPECIES']]
 				TestData['Date_Format']=[dt.datetime.strptime(d,'%Y-%m').date() for d in TestData['Date_Format']]
 				NonSeasonalData_TestData['Date_Format']=[dt.datetime.strptime(d,'%Y-%m').date() for d in NonSeasonalData_TestData['Date_Format']]
+				Winter_startyear_Data['Date_Format']=[dt.datetime.strptime(d,'%Y-%m').date() for d in Winter_startyear_Data['Date_Format']]
 				plt.scatter([d+timedelta(15) for d in TrainData_Dateformat],TrainData_Frequency*100,label=SeasonTrainData_Label)
 				plt.plot([d+timedelta(15) for d in AllData_Frame_Sort["Date_Format"].tolist()],AllData_Frame_Sort[config['SPECIES']]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
 				#plt.plot(AllData_Frame_Sort["Date_Format"].tolist(),AllData_Frame_Sort[config['SPECIES']]*100,linewidth=0.6,alpha=0.7,label=NonSeasonalData_Label)
@@ -348,9 +359,17 @@ def plot_birds_over_time(predictors,locations,config):
 						seasondata_winter=TrainData[(TrainData['YEAR']==year)&(TrainData['MONTH']!=12)]
 						seasondata_winter=seasondata_winter.append(TrainData[(TrainData['YEAR']==year-1)&(TrainData['MONTH']==12)],ignore_index=True)
 						seasondata_winter_year=seasondata_winter[(seasondata_winter['YEAR']==year)]
-						
-						seasondata_winter_blue=seasondata_winter.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_winter_year['MONTH'].max()+1)])
-						seasondata_winter_blue=seasondata_winter_blue.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year-1)&(Nonseasonal_TrainData['MONTH']==11)])
+						minvalue_maxyear_df=seasondata_winter_year[(seasondata_winter_year['MONTH']==seasondata_winter_year['MONTH'].max())]
+						maxvalue_maxyear_df=Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_winter_year['MONTH'].max()+1)]
+						maxvalue_maxyear_df['Date_Format']=[d-timedelta(15) for d in maxvalue_maxyear_df['Date_Format']]
+						maxvalue_maxyear_df[config['SPECIES']]=float(float(minvalue_maxyear_df[config['SPECIES']])+float(maxvalue_maxyear_df[config['SPECIES']]))/2
+						seasondata_winter_blue=seasondata_winter.append(maxvalue_maxyear_df)
+						minvalue_minyear_df=Winter_startyear_Data[(Winter_startyear_Data['YEAR']==year-1)&(Winter_startyear_Data['MONTH']==11)]
+						maxvalue_minyear_df=TrainData[(TrainData['YEAR']==year-1)&(TrainData['MONTH']==12)]
+						minvalue_minyear_df[config['SPECIES']]=float(float(minvalue_minyear_df[config['SPECIES']]) + float(maxvalue_minyear_df[config['SPECIES']]))/2
+						minvalue_minyear_df['Date_Format']=[d+timedelta(15) for d in minvalue_minyear_df['Date_Format']]
+						#seasondata_winter_blue=seasondata_winter_blue.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year-1)&(Nonseasonal_TrainData['MONTH']==11)])
+						seasondata_winter_blue=seasondata_winter_blue.append(minvalue_minyear_df)
 						seasondata_winter_blue=seasondata_winter_blue.sort(['YEAR','MONTH'], ascending=[True,True])
 						seasondata_winter_blue['Date_Format']=[d+timedelta(15) for d in seasondata_winter_blue["Date_Format"]]
 						season_array=np.asarray(seasondata_winter_blue[['Date_Format',config['SPECIES']]])
@@ -359,24 +378,31 @@ def plot_birds_over_time(predictors,locations,config):
 							plt.plot(x,[v*100 for v in y],color='blue')
 						area_startdate=np.asarray(seasondata_winter[(seasondata_winter['YEAR']==year-1)]['Date_Format'])
 						area_enddate=np.asarray(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_winter_year['MONTH'].max()+1)]['Date_Format'])
-						#print area_startdate,area_enddate
 						plt.axvspan(area_startdate[0],area_enddate[0],color='b',alpha=0.1,lw=1)					
 					else:
 						seasondata_notwinter=TrainData[(TrainData['YEAR']==year)]
-						seasondata_notwinter_blue=seasondata_notwinter.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].max()+1)])
-						'''
-						newd=Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].min()-1)]
-						minimum=newd[config['SPECIES']]
-						newd2=seasondata_notwinter[(seasondata_notwinter['MONTH']==seasondata_notwinter['MONTH'].min())]
-						maximum=newd2[config['SPECIES']]
+						minvalue_maxyear_df=seasondata_notwinter[(seasondata_notwinter['YEAR']==year)&(seasondata_notwinter['MONTH']==seasondata_notwinter['MONTH'].max())]
+						#minvalue_for_maxyear=minvalue_maxyear_df[config['SPECIES']]
+						#seasondata_notwinter_blue=seasondata_notwinter.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].max()+1)])
+						maxvalue_maxyear_df=Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].max()+1)]
+						#maxvalue_for_maxyear=maxvalue_maxyear_df[config['SPECIES']]
+						maxvalue_maxyear_df['Date_Format']=[d-timedelta(15) for d in maxvalue_maxyear_df['Date_Format']]
+						maxvalue_maxyear_df[config['SPECIES']]=float(float(minvalue_maxyear_df[config['SPECIES']])+float(maxvalue_maxyear_df[config['SPECIES']]))/2
+						#midpoint=float(midpoint)/2
+						#maxvalue_maxyear_df[config['SPECIES']]=midpoint
+						seasondata_notwinter_blue=seasondata_notwinter.append(maxvalue_maxyear_df)
+						minvalue_minyear_df=Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].min()-1)]
+						#minimum=minvalue_minyear_df[config['SPECIES']]
+						maxvalue_minyear_df=seasondata_notwinter[(seasondata_notwinter['MONTH']==seasondata_notwinter['MONTH'].min())]
+						#maximum=maxvalue_minyear_df[config['SPECIES']]
 						#seasondata_notwinter_blue=seasondata_notwinter_blue.append(newd)
-						newvalue=float(minimum) + float(maximum)
-						newvalue=float(newvalue)/2
-						newd[config['SPECIES']]=newvalue
+						minvalue_minyear_df[config['SPECIES']]=float(float(minvalue_minyear_df[config['SPECIES']]) + float(maxvalue_minyear_df[config['SPECIES']]))/2
+						#newvalue=float(newvalue)/2
+						#minvalue_minyear_df[config['SPECIES']]=newvalue
+						minvalue_minyear_df['Date_Format']=[d+timedelta(15) for d in minvalue_minyear_df['Date_Format']]
 						#seasondata_notwinter_blue=pd.DataFrame({"Date_Format":seasondata_notwinter_blue['Date_Format'],config['SPECIES']:seasondata_notwinter_blue[config['SPECIES']]})
-						seasondata_notwinter_blue=seasondata_notwinter_blue.append(newd)
-						'''
-						seasondata_notwinter_blue=seasondata_notwinter_blue.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].min()-1)])
+						seasondata_notwinter_blue=seasondata_notwinter_blue.append(minvalue_minyear_df)
+						#seasondata_notwinter_blue=seasondata_notwinter_blue.append(Nonseasonal_TrainData[(Nonseasonal_TrainData['YEAR']==year)&(Nonseasonal_TrainData['MONTH']==seasondata_notwinter['MONTH'].min()-1)])
 						seasondata_notwinter_blue['Date_Format']=[d+timedelta(15) for d in seasondata_notwinter_blue["Date_Format"]]
 						seasondata_notwinter_blue=seasondata_notwinter_blue.sort(['YEAR','MONTH'],ascending=[True,True])
 						season_array=np.asarray(seasondata_notwinter_blue[['Date_Format',config['SPECIES']]])
@@ -396,12 +422,12 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.ylabel(YAxis_Label,fontsize=25,labelpad=20)
 					plt.xticks(rotation='horizontal',ha="center")
 					plt.gca().tick_params(axis='y', which='both', labelleft='on', labelright='on')
-					'''
+					
 					for tick in plt.gca().xaxis.get_major_ticks():
 						tick.tick1line.set_markersize(0)
 						tick.tick2line.set_markersize(0)
 						tick.label1.set_horizontalalignment('center')	
-					'''
+					
 					plt.setp(plt.gca().get_xminorticklabels(),visible=False)
 					plt.setp(plt.gca().xaxis.get_ticklines(),markersize=15)
 					plt.setp(plt.gca().yaxis.get_ticklines(),markersize=15)
@@ -441,13 +467,27 @@ def plot_birds_over_time(predictors,locations,config):
 					plt.plot([d+timedelta(15) for d in AllData_Frame['Date_Format']],AllData_Frame_Predictions*100,'r-',linewidth=1.5,label=RegressorLine_Label)   #Plotting Regressor line for Test Data
 					plt.scatter([d+timedelta(15) for d in TestData_Dateformat],TestData_Frequency*100,color='black',label=TestData_Label)
 					max_month=TestData[(TestData['YEAR']==predicting_year)]
-					TestData_blue=TestData.append(NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)])
+					minvalue_maxyear_df=TestData[(TestData['YEAR']==predicting_year)&(TestData['MONTH']==max_month['MONTH'].max())]
+					maxvalue_maxyear_df=NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)]
+					maxvalue_maxyear_df['Date_Format']=[d-timedelta(15) for d in maxvalue_maxyear_df['Date_Format']]
+					maxvalue_maxyear_df[config['SPECIES']]=float(float(minvalue_maxyear_df[config['SPECIES']])+float(maxvalue_maxyear_df[config['SPECIES']]))/2
+					TestData_blue=max_month.append(maxvalue_maxyear_df)
+					TestData_blue=TestData_blue.append(TestData[(TestData['YEAR']==predicting_year-1)])
+					if season=='Winter':
+						minvalue_minyear_df=Winter_startyear_Data[(Winter_startyear_Data['YEAR']==predicting_year-1)&(Winter_startyear_Data['MONTH']==11)]
+						maxvalue_minyear_df=TestData[(TestData['YEAR']==predicting_year-1)&(TestData['MONTH']==12)]
+					else:
+						minvalue_minyear_df=NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].min()-1)]
+						maxvalue_minyear_df=max_month[(max_month['MONTH']==max_month['MONTH'].min())]
+					minvalue_minyear_df[config['SPECIES']]=float(float(minvalue_minyear_df[config['SPECIES']]) + float(maxvalue_minyear_df[config['SPECIES']]))/2	
+					minvalue_minyear_df['Date_Format']=[d+timedelta(15) for d in minvalue_minyear_df['Date_Format']]
+					TestData_blue=TestData_blue.append(minvalue_minyear_df)	
+					TestData_blue['Date_Format']=[d+timedelta(15) for d in TestData_blue["Date_Format"]]
 					TestData_blue=TestData_blue.sort(['YEAR','MONTH'], ascending=[True,True])
-				
 					TestData_array=np.asarray(TestData_blue[['Date_Format',config['SPECIES']]])
 					for start,stop in zip(TestData_array[:-1],TestData_array[1:]):
 						x, y = zip(start,stop)
-						plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
+						plt.plot(x,[v*100 for v in y],color='blue')
 					if season=='Winter':
 						area_startdate=np.asarray(TestData[(TestData['YEAR']==predicting_year-1)]['Date_Format'])
 					else:
@@ -463,12 +503,27 @@ def plot_birds_over_time(predictors,locations,config):
 				elif regline=='False':
 					plt.scatter([d+timedelta(15) for d in TestData_Dateformat],TestData_Frequency*100,color='black',label=TestData_Label)
 					max_month=TestData[(TestData['YEAR']==predicting_year)]
-					TestData_blue=TestData.append(NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)])
+					minvalue_maxyear_df=TestData[(TestData['YEAR']==predicting_year)&(TestData['MONTH']==max_month['MONTH'].max())]
+					maxvalue_maxyear_df=NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].max()+1)]
+					maxvalue_maxyear_df['Date_Format']=[d-timedelta(15) for d in maxvalue_maxyear_df['Date_Format']]
+					maxvalue_maxyear_df[config['SPECIES']]=float(float(minvalue_maxyear_df[config['SPECIES']])+float(maxvalue_maxyear_df[config['SPECIES']]))/2
+					TestData_blue=max_month.append(maxvalue_maxyear_df)
+					TestData_blue=TestData_blue.append(TestData[(TestData['YEAR']==predicting_year-1)])
+					if season=='Winter':
+						minvalue_minyear_df=Winter_startyear_Data[(Winter_startyear_Data['YEAR']==predicting_year-1)&(Winter_startyear_Data['MONTH']==11)]
+						maxvalue_minyear_df=TestData[(TestData['YEAR']==predicting_year-1)&(TestData['MONTH']==12)]
+					else:
+						minvalue_minyear_df=NonSeasonalData_TestData[(NonSeasonalData_TestData['YEAR']==predicting_year)&(NonSeasonalData_TestData['MONTH']==max_month['MONTH'].min()-1)]
+						maxvalue_minyear_df=max_month[(max_month['MONTH']==max_month['MONTH'].min())]
+					minvalue_minyear_df[config['SPECIES']]=float(float(minvalue_minyear_df[config['SPECIES']]) + float(maxvalue_minyear_df[config['SPECIES']]))/2	
+					minvalue_minyear_df['Date_Format']=[d+timedelta(15) for d in minvalue_minyear_df['Date_Format']]
+					TestData_blue=TestData_blue.append(minvalue_minyear_df)	
+					TestData_blue['Date_Format']=[d+timedelta(15) for d in TestData_blue["Date_Format"]]
 					TestData_blue=TestData_blue.sort(['YEAR','MONTH'], ascending=[True,True])
 					TestData_array=np.asarray(TestData_blue[['Date_Format',config['SPECIES']]])
 					for start,stop in zip(TestData_array[:-1],TestData_array[1:]):
 						x, y = zip(start,stop)
-						plt.plot([d+timedelta(15) for d in x],[v*100 for v in y],color='blue')
+						plt.plot(x,[v*100 for v in y],color='blue')
 					if season=='Winter':
 						area_startdate=np.asarray(TestData[(TestData['YEAR']==predicting_year-1)]['Date_Format'])
 					else:
@@ -490,7 +545,7 @@ def plot_birds_over_time(predictors,locations,config):
 							plot(Plot_type)
 				else:
 					plt.close()
-			
+		
 def plot_predictors(predictors,config, max_size,out_fname, minlimit = -100):
 	predictor_coefs = []
 	predictor_intercepts = []
